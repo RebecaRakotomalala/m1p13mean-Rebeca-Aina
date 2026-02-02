@@ -107,10 +107,10 @@ app.post('/api/test/data', (req, res) => {
 // Import du modèle User
 const User = require('./models/User');
 
-// Route d'inscription (Register)
+// Route d'inscription (Register) avec support des rôles
 app.post('/api/auth/register', async (req, res) => {
   try {
-    const { email, password, name } = req.body;
+    const { email, password, name, role, telephone } = req.body;
 
     // Validation
     if (!email || !password || !name) {
@@ -119,6 +119,10 @@ app.post('/api/auth/register', async (req, res) => {
         message: 'Tous les champs sont requis (email, password, name)'
       });
     }
+
+    // Valider le rôle si fourni
+    const validRoles = ['admin', 'boutique', 'client'];
+    const userRole = role && validRoles.includes(role) ? role : 'client';
 
     // Vérifier si l'utilisateur existe déjà
     const existingUser = await User.findOne({ email: email.toLowerCase() });
@@ -133,7 +137,9 @@ app.post('/api/auth/register', async (req, res) => {
     const user = new User({
       email: email.toLowerCase(),
       password: password, // En production, utiliser bcrypt pour hasher
-      name: name
+      name: name,
+      role: userRole,
+      telephone: telephone || undefined
     });
 
     await user.save();
@@ -145,6 +151,8 @@ app.post('/api/auth/register', async (req, res) => {
         id: user._id,
         email: user.email,
         name: user.name,
+        role: user.role,
+        telephone: user.telephone,
         createdAt: user.createdAt
       }
     });
@@ -188,6 +196,14 @@ app.post('/api/auth/login', async (req, res) => {
       });
     }
 
+    // Vérifier si l'utilisateur est actif
+    if (!user.actif) {
+      return res.status(403).json({
+        success: false,
+        message: 'Votre compte a été suspendu'
+      });
+    }
+
     // Connexion réussie
     res.json({
       success: true,
@@ -195,7 +211,10 @@ app.post('/api/auth/login', async (req, res) => {
       user: {
         id: user._id,
         email: user.email,
-        name: user.name
+        name: user.name,
+        role: user.role,
+        telephone: user.telephone,
+        avatar_url: user.avatar_url
       }
     });
   } catch (error) {
@@ -215,6 +234,35 @@ app.get('/api/auth/users', async (req, res) => {
     res.json({
       success: true,
       count: users.length,
+      users: users
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors de la récupération des utilisateurs',
+      error: error.message
+    });
+  }
+});
+
+// Route pour obtenir les utilisateurs par rôle
+app.get('/api/auth/users/role/:role', async (req, res) => {
+  try {
+    const { role } = req.params;
+    const validRoles = ['admin', 'boutique', 'client'];
+    
+    if (!validRoles.includes(role)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Rôle invalide. Rôles valides: admin, boutique, client'
+      });
+    }
+
+    const users = await User.find({ role: role, actif: true }).select('-password');
+    res.json({
+      success: true,
+      count: users.length,
+      role: role,
       users: users
     });
   } catch (error) {
