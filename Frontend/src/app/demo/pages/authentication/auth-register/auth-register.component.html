@@ -10,41 +10,89 @@
             <h3 class="mb-0"><b>Sign up</b></h3>
             <a [routerLink]="['/login']" class="link-primary">Already have an account?</a>
           </div>
-          <div class="row">
-            <div class="col-md-6">
-              <div class="form-group mb-3">
-                <label class="form-label" for="firstName">First Name*</label>
-                <input type="text" class="form-control" id="firstName" placeholder="First Name" />
+
+          <!-- Messages d'erreur/succès -->
+          <div *ngIf="error" class="alert alert-danger alert-dismissible fade show" role="alert">
+            <strong>❌ Erreur:</strong> {{ error }}
+            <button type="button" class="btn-close" (click)="error = ''"></button>
+          </div>
+          <div *ngIf="success" class="alert alert-success alert-dismissible fade show" role="alert">
+            <strong>✅ Succès:</strong> {{ success }}
+            <button type="button" class="btn-close" (click)="success = ''"></button>
+          </div>
+
+          <form (ngSubmit)="onRegister()">
+            <div class="row">
+              <div class="col-md-6">
+                <div class="form-group mb-3">
+                  <label class="form-label" for="firstName">First Name*</label>
+                  <input 
+                    type="text" 
+                    class="form-control" 
+                    id="firstName" 
+                    placeholder="First Name"
+                    [(ngModel)]="firstName"
+                    name="firstName"
+                    required
+                    [disabled]="loading" />
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-group mb-3">
+                  <label class="form-label" for="lastName">Last Name*</label>
+                  <input 
+                    type="text" 
+                    class="form-control" 
+                    id="lastName" 
+                    placeholder="Last Name"
+                    [(ngModel)]="lastName"
+                    name="lastName"
+                    required
+                    [disabled]="loading" />
+                </div>
               </div>
             </div>
-            <div class="col-md-6">
-              <div class="form-group mb-3">
-                <label class="form-label" for="lastName">Last Name*</label>
-                <input type="text" class="form-control" id="lastName" placeholder="Last Name" />
-              </div>
+            <div class="form-group mb-3">
+              <label class="form-label" for="emailAddress">Email Address*</label>
+              <input 
+                type="email" 
+                class="form-control" 
+                id="emailAddress" 
+                placeholder="Email Address"
+                [(ngModel)]="email"
+                name="email"
+                required
+                [disabled]="loading" />
             </div>
-          </div>
-          <div class="form-group mb-3">
-            <label class="form-label" for="company">Company</label>
-            <input type="text" class="form-control" id="company" placeholder="Company" />
-          </div>
-          <div class="form-group mb-3">
-            <label class="form-label" for="emailAddress">Email Address*</label>
-            <input type="email" class="form-control" id="emailAddress" placeholder="Email Address" />
-          </div>
-          <div class="form-group mb-3">
-            <label class="form-label" for="password">Password</label>
-            <input type="password" class="form-control" id="password" placeholder="Password" />
-          </div>
-          <p class="mt-4 text-sm text-muted">
-            By Signing up, you agree to our
-            <a href="javascript:" class="text-primary">Terms of Service</a>
-            and
-            <a href="javascript:" class="text-primary">Privacy Policy</a>
-          </p>
-          <div class="d-grid mt-3">
-            <button type="button" class="btn btn-primary">Create Account</button>
-          </div>
+            <div class="form-group mb-3">
+              <label class="form-label" for="password">Password*</label>
+              <input 
+                type="password" 
+                class="form-control" 
+                id="password" 
+                placeholder="Password (min 6 caractères)"
+                [(ngModel)]="password"
+                name="password"
+                required
+                minlength="6"
+                [disabled]="loading" />
+            </div>
+            <p class="mt-4 text-sm text-muted">
+              By Signing up, you agree to our
+              <a href="javascript:" class="text-primary">Terms of Service</a>
+              and
+              <a href="javascript:" class="text-primary">Privacy Policy</a>
+            </p>
+            <div class="d-grid mt-3">
+              <button 
+                type="submit" 
+                class="btn btn-primary"
+                [disabled]="loading">
+                <span *ngIf="loading" class="spinner-border spinner-border-sm me-2"></span>
+                {{ loading ? 'Création en cours...' : 'Create Account' }}
+              </button>
+            </div>
+          </form>
           <div class="saprator mt-3">
             <span>Sign up with</span>
           </div>
