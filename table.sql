@@ -206,10 +206,12 @@ CREATE TABLE commandes (
     client_telephone        VARCHAR(20),
     
     -- Adresse de livraison
-    adresse_livraison       JSON, -- {rue, code_postal, ville, pays, complement}
+    adresse_livraison_id    ObjectId REFERENCES adresses(_id), -- Référence à une adresse sauvegardée
+    adresse_livraison       JSON, -- {rue, code_postal, ville, pays, complement} (si pas d'adresse sauvegardée)
     
     -- Adresse de facturation
-    adresse_facturation     JSON,
+    adresse_facturation_id  ObjectId REFERENCES adresses(_id), -- Référence à une adresse sauvegardée
+    adresse_facturation     JSON, -- {rue, code_postal, ville, pays, complement} (si pas d'adresse sauvegardée)
     
     -- Détails commande
     sous_total              DECIMAL(10,2) NOT NULL,
@@ -943,6 +945,334 @@ CREATE TABLE logs_systeme (
     INDEX idx_date (date_log)
 );
 
+-- ----------------------------------------------------------------------------
+-- Collection : adresses
+-- Description : Adresses de livraison et facturation des clients
+-- ----------------------------------------------------------------------------
+CREATE TABLE adresses (
+    _id                     ObjectId PRIMARY KEY,
+    client_id               ObjectId NOT NULL REFERENCES utilisateurs(_id),
+    
+    -- Type d'adresse
+    type                    ENUM('livraison', 'facturation', 'les_deux') NOT NULL,
+    
+    -- Adresse
+    nom_destinataire        VARCHAR(100),
+    telephone               VARCHAR(20),
+    rue                     VARCHAR(255) NOT NULL,
+    complement              VARCHAR(255),
+    code_postal             VARCHAR(20) NOT NULL,
+    ville                   VARCHAR(100) NOT NULL,
+    pays                    VARCHAR(100) NOT NULL DEFAULT 'Madagascar',
+    
+    -- Coordonnées GPS (optionnel)
+    latitude                DECIMAL(10,8),
+    longitude               DECIMAL(11,8),
+    
+    -- Statut
+    adresse_par_defaut       BOOLEAN DEFAULT false,
+    
+    -- Métadonnées
+    date_creation           TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    date_modification       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    INDEX idx_client (client_id),
+    INDEX idx_type (type),
+    INDEX idx_par_defaut (adresse_par_defaut)
+);
+
+-- ----------------------------------------------------------------------------
+-- Collection : transactions_paiement
+-- Description : Suivi détaillé des transactions de paiement
+-- ----------------------------------------------------------------------------
+CREATE TABLE transactions_paiement (
+    _id                     ObjectId PRIMARY KEY,
+    commande_id             ObjectId NOT NULL REFERENCES commandes(_id),
+    client_id               ObjectId NOT NULL REFERENCES utilisateurs(_id),
+    
+    -- Détails transaction
+    montant                 DECIMAL(10,2) NOT NULL,
+    devise                  VARCHAR(10) DEFAULT 'EUR',
+    methode_paiement        ENUM('carte_credit', 'paypal', 'wallet', 'especes') NOT NULL,
+    
+    -- Références externes
+    transaction_id_externe  VARCHAR(255), -- ID de la passerelle de paiement
+    reference_paiement      VARCHAR(255),
+    
+    -- Statut
+    statut                  ENUM('en_attente', 'en_cours', 'reussie', 'echouee', 'annulee', 'remboursee') NOT NULL,
+    
+    -- Détails de la carte (si applicable - hashé)
+    derniers_4_chiffres     VARCHAR(4),
+    type_carte              VARCHAR(50), -- "Visa", "Mastercard", etc.
+    
+    -- Erreurs
+    code_erreur             VARCHAR(100),
+    message_erreur           TEXT,
+    
+    -- Métadonnées
+    date_transaction        TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    date_confirmation       TIMESTAMP,
+    
+    INDEX idx_commande (commande_id),
+    INDEX idx_client (client_id),
+    INDEX idx_statut (statut),
+    INDEX idx_transaction_externe (transaction_id_externe),
+    INDEX idx_date (date_transaction)
+);
+
+-- ----------------------------------------------------------------------------
+-- Collection : retours
+-- Description : Gestion des retours et remboursements
+-- ----------------------------------------------------------------------------
+CREATE TABLE retours (
+    _id                     ObjectId PRIMARY KEY,
+    commande_id             ObjectId NOT NULL REFERENCES commandes(_id),
+    ligne_commande_id       ObjectId NOT NULL REFERENCES lignes_commandes(_id),
+    client_id               ObjectId NOT NULL REFERENCES utilisateurs(_id),
+    boutique_id             ObjectId NOT NULL REFERENCES boutiques(_id),
+    
+    -- Raison du retour
+    raison                  ENUM('defaut', 'non_conforme', 'erreur_commande', 'autre') NOT NULL,
+    description             TEXT,
+    
+    -- Photos justificatives
+    photos                  JSON, -- Array d'URLs
+    
+    -- Statut
+    statut                  ENUM('demande', 'approuve', 'refuse', 'en_transit', 'recu', 'rembourse') DEFAULT 'demande',
+    
+    -- Remboursement
+    montant_rembourse       DECIMAL(10,2),
+    methode_remboursement   ENUM('carte_origine', 'wallet', 'points', 'virement'),
+    date_remboursement      TIMESTAMP,
+    transaction_remboursement_id ObjectId REFERENCES transactions_paiement(_id),
+    
+    -- Suivi
+    date_demande            TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    date_approbation         TIMESTAMP,
+    date_refus              TIMESTAMP,
+    raison_refus            TEXT,
+    traite_par              ObjectId REFERENCES utilisateurs(_id),
+    
+    -- Métadonnées
+    date_modification       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    INDEX idx_commande (commande_id),
+    INDEX idx_ligne_commande (ligne_commande_id),
+    INDEX idx_client (client_id),
+    INDEX idx_boutique (boutique_id),
+    INDEX idx_statut (statut),
+    INDEX idx_date_demande (date_demande)
+);
+
+-- ----------------------------------------------------------------------------
+-- Collection : mouvements_stock
+-- Description : Traçabilité des mouvements de stock (entrées/sorties)
+-- ----------------------------------------------------------------------------
+CREATE TABLE mouvements_stock (
+    _id                     ObjectId PRIMARY KEY,
+    produit_id              ObjectId NOT NULL REFERENCES produits(_id),
+    boutique_id             ObjectId NOT NULL REFERENCES boutiques(_id),
+    
+    -- Type de mouvement
+    type                    ENUM('entree', 'sortie', 'ajustement', 'retour', 'perte', 'vol') NOT NULL,
+    quantite                INT NOT NULL, -- Positif pour entrée, négatif pour sortie
+    
+    -- Raison
+    raison                  VARCHAR(200),
+    description             TEXT,
+    
+    -- Références
+    commande_id             ObjectId REFERENCES commandes(_id),
+    retour_id               ObjectId REFERENCES retours(_id),
+    
+    -- Stock avant/après
+    stock_avant             INT NOT NULL,
+    stock_apres             INT NOT NULL,
+    
+    -- Utilisateur responsable
+    utilisateur_id          ObjectId REFERENCES utilisateurs(_id),
+    
+    -- Métadonnées
+    date_mouvement          TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    INDEX idx_produit (produit_id),
+    INDEX idx_boutique (boutique_id),
+    INDEX idx_type (type),
+    INDEX idx_date (date_mouvement),
+    INDEX idx_commande (commande_id)
+);
+
+-- ----------------------------------------------------------------------------
+-- Collection : factures
+-- Description : Factures générées pour les commandes
+-- ----------------------------------------------------------------------------
+CREATE TABLE factures (
+    _id                     ObjectId PRIMARY KEY,
+    commande_id             ObjectId NOT NULL REFERENCES commandes(_id),
+    client_id               ObjectId NOT NULL REFERENCES utilisateurs(_id),
+    
+    -- Numéro de facture
+    numero_facture          VARCHAR(50) UNIQUE NOT NULL,
+    
+    -- Informations client
+    client_nom              VARCHAR(100),
+    client_email            VARCHAR(255),
+    client_telephone        VARCHAR(20),
+    adresse_facturation     JSON,
+    
+    -- Montants
+    sous_total              DECIMAL(10,2) NOT NULL,
+    taxes                   DECIMAL(10,2) DEFAULT 0.00,
+    frais_livraison         DECIMAL(10,2) DEFAULT 0.00,
+    reduction               DECIMAL(10,2) DEFAULT 0.00,
+    montant_total           DECIMAL(10,2) NOT NULL,
+    
+    -- Fichier PDF
+    fichier_pdf_url         VARCHAR(500),
+    
+    -- Statut
+    statut                  ENUM('brouillon', 'generee', 'envoyee', 'annulee') DEFAULT 'brouillon',
+    
+    -- Métadonnées
+    date_emission           TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    date_envoi              TIMESTAMP,
+    generee_par             ObjectId REFERENCES utilisateurs(_id),
+    
+    INDEX idx_commande (commande_id),
+    INDEX idx_client (client_id),
+    INDEX idx_numero (numero_facture),
+    INDEX idx_statut (statut)
+);
+
+-- ----------------------------------------------------------------------------
+-- Collection : abonnements_boutiques
+-- Description : Suivi des abonnements et paiements des boutiques
+-- ----------------------------------------------------------------------------
+CREATE TABLE abonnements_boutiques (
+    _id                     ObjectId PRIMARY KEY,
+    boutique_id             ObjectId NOT NULL REFERENCES boutiques(_id),
+    
+    -- Plan
+    plan                    ENUM('basique', 'premium', 'vip') NOT NULL,
+    montant_mensuel         DECIMAL(10,2) NOT NULL,
+    
+    -- Période
+    date_debut              TIMESTAMP NOT NULL,
+    date_fin                TIMESTAMP NOT NULL,
+    
+    -- Paiement
+    methode_paiement        ENUM('carte_credit', 'virement', 'especes'),
+    transaction_id          VARCHAR(255),
+    transaction_paiement_id ObjectId REFERENCES transactions_paiement(_id),
+    statut_paiement          ENUM('en_attente', 'paye', 'echoue') DEFAULT 'en_attente',
+    
+    -- Renouvellement automatique
+    renouvellement_auto     BOOLEAN DEFAULT false,
+    
+    -- Statut
+    actif                   BOOLEAN DEFAULT true,
+    
+    -- Métadonnées
+    date_creation           TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    date_modification       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    cree_par                ObjectId REFERENCES utilisateurs(_id),
+    
+    INDEX idx_boutique (boutique_id),
+    INDEX idx_plan (plan),
+    INDEX idx_dates (date_debut, date_fin),
+    INDEX idx_actif (actif),
+    INDEX idx_statut_paiement (statut_paiement)
+);
+
+-- ----------------------------------------------------------------------------
+-- Collection : historique_prix
+-- Description : Historique des modifications de prix des produits
+-- ----------------------------------------------------------------------------
+CREATE TABLE historique_prix (
+    _id                     ObjectId PRIMARY KEY,
+    produit_id              ObjectId NOT NULL REFERENCES produits(_id),
+    
+    -- Prix
+    ancien_prix             DECIMAL(10,2) NOT NULL,
+    nouveau_prix            DECIMAL(10,2) NOT NULL,
+    
+    -- Raison
+    raison                  VARCHAR(200), -- "promotion", "augmentation", "ajustement"
+    
+    -- Utilisateur
+    modifie_par             ObjectId REFERENCES utilisateurs(_id),
+    
+    -- Métadonnées
+    date_modification       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    INDEX idx_produit (produit_id),
+    INDEX idx_date (date_modification),
+    INDEX idx_raison (raison)
+);
+
+-- ----------------------------------------------------------------------------
+-- Collection : zones_centre
+-- Description : Zones et étages du centre commercial (pour plan interactif)
+-- ----------------------------------------------------------------------------
+CREATE TABLE zones_centre (
+    _id                     ObjectId PRIMARY KEY,
+    
+    -- Informations zone
+    nom                     VARCHAR(100) NOT NULL,
+    etage                   VARCHAR(50),
+    description             TEXT,
+    
+    -- Coordonnées (polygone pour zone)
+    coordonnees             JSON, -- Array de points [{x, y}, ...]
+    
+    -- Plan interactif
+    image_plan_url          VARCHAR(500),
+    
+    -- Statut
+    actif                   BOOLEAN DEFAULT true,
+    
+    -- Métadonnées
+    date_creation           TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    date_modification       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    INDEX idx_etage (etage),
+    INDEX idx_actif (actif),
+    INDEX idx_nom (nom)
+);
+
+-- ----------------------------------------------------------------------------
+-- Collection : alertes_stock
+-- Description : Alertes pour stock bas ou rupture de stock
+-- ----------------------------------------------------------------------------
+CREATE TABLE alertes_stock (
+    _id                     ObjectId PRIMARY KEY,
+    produit_id              ObjectId NOT NULL REFERENCES produits(_id),
+    boutique_id             ObjectId NOT NULL REFERENCES boutiques(_id),
+    
+    -- Type d'alerte
+    type                    ENUM('stock_bas', 'rupture', 'seuil_atteint') NOT NULL,
+    
+    -- Niveau de stock
+    stock_actuel            INT NOT NULL,
+    seuil_alerte            INT NOT NULL,
+    
+    -- Statut
+    traitee                 BOOLEAN DEFAULT false,
+    date_traitement          TIMESTAMP,
+    traitee_par             ObjectId REFERENCES utilisateurs(_id),
+    
+    -- Métadonnées
+    date_alerte             TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    INDEX idx_produit (produit_id),
+    INDEX idx_boutique (boutique_id),
+    INDEX idx_traitee (traitee),
+    INDEX idx_type (type),
+    INDEX idx_date (date_alerte)
+);
+
 -- ============================================================================
 -- INDEX COMPOSITES POUR PERFORMANCES
 -- ============================================================================
@@ -953,6 +1283,7 @@ CREATE INDEX idx_produits_boutique_actif ON produits(boutique_id, actif);
 
 -- Commandes par client et statut
 CREATE INDEX idx_commandes_client_statut ON commandes(client_id, statut, date_creation);
+CREATE INDEX idx_commandes_adresses ON commandes(adresse_livraison_id, adresse_facturation_id);
 
 -- Messages non lus
 CREATE INDEX idx_messages_non_lus ON messages(destinataire_id, lu, date_envoi);
@@ -965,6 +1296,30 @@ CREATE INDEX idx_evenements_a_venir ON evenements(statut, date_debut);
 
 -- Analytics par période
 CREATE INDEX idx_analytics_periode ON analytics_vues(type, date_visite);
+
+-- Adresses par défaut
+CREATE INDEX idx_adresses_client_defaut ON adresses(client_id, adresse_par_defaut);
+
+-- Transactions par statut et date
+CREATE INDEX idx_transactions_statut_date ON transactions_paiement(statut, date_transaction);
+
+-- Retours par boutique et statut
+CREATE INDEX idx_retours_boutique_statut ON retours(boutique_id, statut, date_demande);
+
+-- Mouvements stock par produit et date
+CREATE INDEX idx_mouvements_produit_date ON mouvements_stock(produit_id, date_mouvement);
+
+-- Factures par client et statut
+CREATE INDEX idx_factures_client_statut ON factures(client_id, statut, date_emission);
+
+-- Abonnements actifs
+CREATE INDEX idx_abonnements_actifs ON abonnements_boutiques(boutique_id, actif, date_fin);
+
+-- Historique prix par produit
+CREATE INDEX idx_historique_prix_produit_date ON historique_prix(produit_id, date_modification);
+
+-- Alertes stock non traitées
+CREATE INDEX idx_alertes_stock_non_traitees ON alertes_stock(boutique_id, traitee, type);
 
 -- ============================================================================
 -- NOTES D'IMPLÉMENTATION MONGODB
@@ -1009,8 +1364,30 @@ CONVERSION VERS MONGODB :
    - Possibilité de dénormalisation pour les données fréquemment consultées
 
 7. Transactions MongoDB pour les opérations critiques :
-   - Création commande + mise à jour stock
+   - Création commande + mise à jour stock + création mouvement_stock
    - Utilisation points + récupération récompense
+   - Retour produit + remboursement + mise à jour stock
+   - Paiement + création transaction_paiement + mise à jour commande
+   - Génération facture + mise à jour commande
+
+8. Nouvelles collections ajoutées :
+   - adresses : Gestion des adresses clients réutilisables
+   - transactions_paiement : Suivi détaillé des paiements
+   - retours : Gestion des retours et remboursements
+   - mouvements_stock : Traçabilité des mouvements de stock
+   - factures : Génération et gestion des factures
+   - abonnements_boutiques : Suivi des abonnements boutiques
+   - historique_prix : Historique des modifications de prix
+   - zones_centre : Zones et étages pour plan interactif
+   - alertes_stock : Alertes pour stock bas
+
+9. Relations importantes :
+   - commandes.adresse_livraison peut référencer adresses._id (optionnel)
+   - retours.ligne_commande_id → lignes_commandes._id
+   - transactions_paiement.commande_id → commandes._id
+   - mouvements_stock peut référencer commandes ou retours
+   - factures.commande_id → commandes._id
+   - abonnements_boutiques.boutique_id → boutiques._id
 */
 
 -- ============================================================================
