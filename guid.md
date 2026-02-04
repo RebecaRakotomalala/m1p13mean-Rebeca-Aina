@@ -33,3 +33,6 @@ sudo systemctl status mongod
 ## Test
 mongosh --eval "db.version()"
 
+
+LANCEMENT:
+    mongosh 
