@@ -92,5 +92,11 @@ export class AuthService {
   isAuthenticated(): boolean {
     return this.getCurrentUser() !== null;
   }
+
+  // Vérifier si l'utilisateur a un rôle spécifique
+  hasRole(role: 'admin' | 'boutique' | 'client'): boolean {
+    const user = this.getCurrentUser();
+    return user !== null && user.role === role;
+  }
 }
 

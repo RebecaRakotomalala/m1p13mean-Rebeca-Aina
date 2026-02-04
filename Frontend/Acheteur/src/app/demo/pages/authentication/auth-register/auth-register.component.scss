@@ -1,5 +1,59 @@
 @import '../../../../../scss/settings/color-variables.scss';
 
+// Styles pour les cartes de type de compte
+.account-type-card {
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background-color: #ffffff;
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  
+  &:hover {
+    border-color: #1890ff;
+    background-color: #f0f8ff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  &.selected {
+    border-color: #1890ff;
+    background-color: #e6f7ff;
+    box-shadow: 0 2px 8px rgba(24, 144, 255, 0.2);
+  }
+  
+  .form-check {
+    margin: 0;
+    width: 100%;
+    
+    .form-check-input {
+      margin-top: 0.25rem;
+      cursor: pointer;
+      width: 18px;
+      height: 18px;
+    }
+    
+    .form-check-label {
+      cursor: pointer;
+      margin-left: 8px;
+      font-size: 0.95rem;
+      color: #333;
+      
+      strong {
+        font-weight: 600;
+      }
+    }
+  }
+  
+  &[disabled] {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
 .auth-main {
   position: relative;
 

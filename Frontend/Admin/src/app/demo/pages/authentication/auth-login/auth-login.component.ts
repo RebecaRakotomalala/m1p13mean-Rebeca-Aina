@@ -55,7 +55,13 @@ export class AuthLoginComponent {
     }).subscribe({
       next: (response) => {
         this.loading = false;
-        if (response.success) {
+        if (response.success && response.user) {
+          // Vérifier que l'utilisateur a le rôle admin
+          if (response.user.role !== 'admin') {
+            this.error = 'Accès refusé. Cette interface est réservée aux Administrateurs.';
+            this.authService.logout();
+            return;
+          }
           this.success = 'Connexion réussie! Redirection...';
           setTimeout(() => {
             this.router.navigate(['/dashboard/default']);

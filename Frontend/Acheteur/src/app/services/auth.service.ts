@@ -26,6 +26,7 @@ export interface RegisterData {
   password: string;
   name: string;
   telephone?: string;
+  role?: 'admin' | 'boutique' | 'client';
 }
 
 export interface LoginData {
@@ -41,11 +42,11 @@ export class AuthService {
   private apiUrl = environment.apiUrl;
   private currentUser: User | null = null;
 
-  // Inscription avec rôle Client/Acheteur
+  // Inscription avec rôle sélectionné (Admin, Boutique, ou Client)
   register(data: RegisterData): Observable<AuthResponse> {
     const registerData = {
       ...data,
-      role: 'client' // Force le rôle client pour cette interface
+      role: data.role || 'client' // Utilise le rôle fourni ou 'client' par défaut
     };
     return this.http.post<AuthResponse>(`${this.apiUrl}/auth/register`, registerData)
       .pipe(

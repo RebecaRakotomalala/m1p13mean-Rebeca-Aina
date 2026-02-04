@@ -13,7 +13,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 // Variables d'environnement
 const PORT = process.env.PORT || 3000;
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/test';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/mall';
 
 // Connexion à MongoDB avec gestion d'erreur non-bloquante
 mongoose.connect(MONGODB_URI, {
@@ -136,8 +136,8 @@ app.post('/api/auth/register', async (req, res) => {
     // Créer un nouvel utilisateur
     const user = new User({
       email: email.toLowerCase(),
-      password: password, // En production, utiliser bcrypt pour hasher
-      name: name,
+      mot_de_passe_hash: password, // En production, utiliser bcrypt pour hasher
+      nom: name,
       role: userRole,
       telephone: telephone || undefined
     });
@@ -150,10 +150,11 @@ app.post('/api/auth/register', async (req, res) => {
       user: {
         id: user._id,
         email: user.email,
-        name: user.name,
+        nom: user.nom,
+        prenom: user.prenom,
         role: user.role,
         telephone: user.telephone,
-        createdAt: user.createdAt
+        createdAt: user.date_creation
       }
     });
   } catch (error) {
@@ -189,7 +190,7 @@ app.post('/api/auth/login', async (req, res) => {
     }
 
     // Vérifier le mot de passe (en production, utiliser bcrypt.compare)
-    if (user.password !== password) {
+    if (user.mot_de_passe_hash !== password) {
       return res.status(401).json({
         success: false,
         message: 'Email ou mot de passe incorrect'
@@ -211,7 +212,8 @@ app.post('/api/auth/login', async (req, res) => {
       user: {
         id: user._id,
         email: user.email,
-        name: user.name,
+        nom: user.nom,
+        prenom: user.prenom,
         role: user.role,
         telephone: user.telephone,
         avatar_url: user.avatar_url
