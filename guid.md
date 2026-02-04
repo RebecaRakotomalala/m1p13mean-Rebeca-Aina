@@ -33,3 +33,12 @@ sudo systemctl status mongod
 ## Test
 mongosh --eval "db.version()"
 
+
+LANCEMENT:
+    mongosh 
+    show dbs (show database)
+
+    cd Backend: npm run dev
+    cd Frontend: cd Boutique: npm start http://localhost:4201/
+                 cd Admin: npm start http://localhost:4200/
+                 cd Acheteur: npm start http://localhost:4202/
