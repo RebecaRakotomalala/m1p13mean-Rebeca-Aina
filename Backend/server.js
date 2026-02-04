@@ -13,7 +13,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 // Variables d'environnement
 const PORT = process.env.PORT || 3000;
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/test';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/mall';
 
 // Connexion à MongoDB avec gestion d'erreur non-bloquante
 mongoose.connect(MONGODB_URI, {
@@ -107,10 +107,10 @@ app.post('/api/test/data', (req, res) => {
 // Import du modèle User
 const User = require('./models/User');
 
-// Route d'inscription (Register)
+// Route d'inscription (Register) avec support des rôles
 app.post('/api/auth/register', async (req, res) => {
   try {
-    const { email, password, name } = req.body;
+    const { email, password, name, role, telephone } = req.body;
 
     // Validation
     if (!email || !password || !name) {
@@ -119,6 +119,10 @@ app.post('/api/auth/register', async (req, res) => {
         message: 'Tous les champs sont requis (email, password, name)'
       });
     }
+
+    // Valider le rôle si fourni
+    const validRoles = ['admin', 'boutique', 'client'];
+    const userRole = role && validRoles.includes(role) ? role : 'client';
 
     // Vérifier si l'utilisateur existe déjà
     const existingUser = await User.findOne({ email: email.toLowerCase() });
@@ -132,8 +136,10 @@ app.post('/api/auth/register', async (req, res) => {
     // Créer un nouvel utilisateur
     const user = new User({
       email: email.toLowerCase(),
-      password: password, // En production, utiliser bcrypt pour hasher
-      name: name
+      mot_de_passe_hash: password, // En production, utiliser bcrypt pour hasher
+      nom: name,
+      role: userRole,
+      telephone: telephone || undefined
     });
 
     await user.save();
@@ -144,8 +150,11 @@ app.post('/api/auth/register', async (req, res) => {
       user: {
         id: user._id,
         email: user.email,
-        name: user.name,
-        createdAt: user.createdAt
+        nom: user.nom,
+        prenom: user.prenom,
+        role: user.role,
+        telephone: user.telephone,
+        createdAt: user.date_creation
       }
     });
   } catch (error) {
@@ -181,10 +190,18 @@ app.post('/api/auth/login', async (req, res) => {
     }
 
     // Vérifier le mot de passe (en production, utiliser bcrypt.compare)
-    if (user.password !== password) {
+    if (user.mot_de_passe_hash !== password) {
       return res.status(401).json({
         success: false,
         message: 'Email ou mot de passe incorrect'
+      });
+    }
+
+    // Vérifier si l'utilisateur est actif
+    if (!user.actif) {
+      return res.status(403).json({
+        success: false,
+        message: 'Votre compte a été suspendu'
       });
     }
 
@@ -195,7 +212,11 @@ app.post('/api/auth/login', async (req, res) => {
       user: {
         id: user._id,
         email: user.email,
-        name: user.name
+        nom: user.nom,
+        prenom: user.prenom,
+        role: user.role,
+        telephone: user.telephone,
+        avatar_url: user.avatar_url
       }
     });
   } catch (error) {
@@ -215,6 +236,35 @@ app.get('/api/auth/users', async (req, res) => {
     res.json({
       success: true,
       count: users.length,
+      users: users
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors de la récupération des utilisateurs',
+      error: error.message
+    });
+  }
+});
+
+// Route pour obtenir les utilisateurs par rôle
+app.get('/api/auth/users/role/:role', async (req, res) => {
+  try {
+    const { role } = req.params;
+    const validRoles = ['admin', 'boutique', 'client'];
+    
+    if (!validRoles.includes(role)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Rôle invalide. Rôles valides: admin, boutique, client'
+      });
+    }
+
+    const users = await User.find({ role: role, actif: true }).select('-password');
+    res.json({
+      success: true,
+      count: users.length,
+      role: role,
       users: users
     });
   } catch (error) {
