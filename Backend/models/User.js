@@ -19,7 +19,29 @@ const userSchema = new mongoose.Schema({
     required: [true, 'Le nom est requis'],
     trim: true
   },
+  role: {
+    type: String,
+    enum: ['admin', 'boutique', 'client'],
+    default: 'client',
+    required: true
+  },
+  // Informations supplémentaires selon le rôle
+  telephone: String,
+  avatar_url: String,
+  actif: {
+    type: Boolean,
+    default: true
+  },
+  // Pour les boutiques
+  boutique_id: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Boutique'
+  },
   createdAt: {
+    type: Date,
+    default: Date.now
+  },
+  updatedAt: {
     type: Date,
     default: Date.now
   }
