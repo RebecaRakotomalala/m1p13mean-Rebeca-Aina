@@ -62,78 +62,55 @@ CREATE TABLE utilisateurs (
 -- Collection : boutiques
 -- Description : Informations détaillées des boutiques du centre commercial
 -- ----------------------------------------------------------------------------
-CREATE TABLE boutiques (
-    _id                     ObjectId PRIMARY KEY,
-    utilisateur_id          ObjectId NOT NULL REFERENCES utilisateurs(_id),
-    
-    -- Informations générales
-    nom                     VARCHAR(200) NOT NULL,
-    slug                    VARCHAR(200) UNIQUE NOT NULL,
-    description_courte      VARCHAR(500),
-    description_longue      TEXT,
-    logo_url                VARCHAR(500),
-    banniere_url            VARCHAR(500),
-    
-    -- Catégories
-    categorie_principale    VARCHAR(100) NOT NULL,
-    categories_secondaires  JSON, -- Array de catégories
-    
-    -- Coordonnées
-    email_contact           VARCHAR(255),
-    telephone_contact       VARCHAR(20),
-    site_web                VARCHAR(500),
-    
-    -- Réseaux sociaux
-    facebook_url            VARCHAR(500),
-    instagram_url           VARCHAR(500),
-    twitter_url             VARCHAR(500),
-    tiktok_url              VARCHAR(500),
-    
-    -- Localisation dans le centre
-    numero_emplacement      VARCHAR(50),
-    etage                   VARCHAR(50),
-    zone                    VARCHAR(100),
-    surface_m2              DECIMAL(10,2),
-    
-    -- Coordonnées GPS (pour plan interactif)
-    position_x              DECIMAL(10,6),
-    position_y              DECIMAL(10,6),
-    
-    -- Horaires (JSON pour flexibilité)
-    horaires                JSON, -- {lundi: {ouverture: "09:00", fermeture: "19:00"}, ...}
-    
-    -- Services proposés
-    services                JSON, -- Array: ["livraison", "retrait", "click_and_collect", "paiement_cb", "paiement_especes"]
-    
-    -- Galerie photos
-    galerie_photos          JSON, -- Array d'URLs
-    
-    -- Statistiques
-    note_moyenne            DECIMAL(3,2) DEFAULT 0.00,
-    nombre_avis             INT DEFAULT 0,
-    nombre_vues             INT DEFAULT 0,
-    nombre_favoris          INT DEFAULT 0,
-    
-    -- Statut et validation
-    statut                  ENUM('en_attente', 'validee', 'active', 'suspendue', 'fermee') DEFAULT 'en_attente',
-    date_validation         TIMESTAMP,
-    validee_par             ObjectId REFERENCES utilisateurs(_id),
-    
-    -- Abonnement/Plan
-    plan                    ENUM('basique', 'premium', 'vip') DEFAULT 'basique',
-    date_debut_abonnement   TIMESTAMP,
-    date_fin_abonnement     TIMESTAMP,
-    
-    -- Métadonnées
-    date_creation           TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    date_modification       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    
-    INDEX idx_utilisateur (utilisateur_id),
-    INDEX idx_slug (slug),
-    INDEX idx_categorie (categorie_principale),
-    INDEX idx_statut (statut),
-    INDEX idx_note (note_moyenne)
-);
+{
+  utilisateur_id: ObjectId("..."),   // propriétaire de la boutique
+
+  // Identité visible
+  nom: "Boutique Tech Tana",
+  slug: "boutique-tech-tana",
+  description_courte: "Vente de matériel high-tech",
+  logo_url: "https://logo.jpg",
+  banniere_url: "https://banniere.jpg",
+
+  // Catégories
+  categorie_principale: "Electronique",
+  categories_secondaires: ["Audio", "Accessoires"],
+
+  // Contact
+  email_contact: "contact@boutique.com",
+  telephone_contact: "0340000000",
+  site_web: "https://boutique.com",
+
+  // Réseaux sociaux
+  facebook_url: "https://facebook.com/...",
+  instagram_url: "https://instagram.com/...",
+
+  // Services (ça tu gardes — c’est propre ✅)
+  services: [
+    "livraison",
+    "click_and_collect",
+    "paiement_cb"
+  ],
+
+  // Galerie photos
+  galerie_photos: [
+    "https://photo1.jpg",
+    "https://photo2.jpg"
+  ],
+
+  // Statistiques (ça tu gardes aussi)
+  note_moyenne: 0,
+  nombre_avis: 0,
+  nombre_vues: 0,
+  nombre_favoris: 0,
+
+  // Statut
+  statut: "en_attente",   // ou "active"
+  plan: "basique",
+
+  date_creation: new Date(),
+  date_modification: new Date()
+}
 
 -- ----------------------------------------------------------------------------
 -- Collection : produits
