@@ -5,7 +5,7 @@ const boutiqueSchema = new mongoose.Schema({
   utilisateur_id: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: true
+    required: [true, 'L\'ID utilisateur est requis']
   },
   
   // Informations générales
@@ -17,62 +17,127 @@ const boutiqueSchema = new mongoose.Schema({
   },
   slug: {
     type: String,
-    required: true,
+    required: [true, 'Le slug de la boutique est requis'],
     unique: true,
+    lowercase: true,
     trim: true,
     maxlength: 200
   },
   description_courte: {
     type: String,
-    maxlength: 500
+    maxlength: 500,
+    trim: true
   },
-  description_longue: String,
-  logo_url: String,
-  banniere_url: String,
+  description_longue: {
+    type: String,
+    trim: true
+  },
+  logo_url: {
+    type: String,
+    maxlength: 500,
+    trim: true
+  },
+  banniere_url: {
+    type: String,
+    maxlength: 500,
+    trim: true
+  },
   
   // Catégories
   categorie_principale: {
     type: String,
-    required: true,
-    maxlength: 100
+    required: [true, 'La catégorie principale est requise'],
+    maxlength: 100,
+    trim: true
   },
-  categories_secondaires: [String], // Array de catégories
+  categories_secondaires: {
+    type: [String],
+    default: []
+  },
   
   // Coordonnées
-  email_contact: String,
-  telephone_contact: String,
-  site_web: String,
+  email_contact: {
+    type: String,
+    maxlength: 255,
+    trim: true,
+    lowercase: true
+  },
+  telephone_contact: {
+    type: String,
+    maxlength: 20,
+    trim: true
+  },
   
   // Réseaux sociaux
-  facebook_url: String,
-  instagram_url: String,
-  twitter_url: String,
-  tiktok_url: String,
+  facebook_url: {
+    type: String,
+    maxlength: 500,
+    trim: true
+  },
+  instagram_url: {
+    type: String,
+    maxlength: 500,
+    trim: true
+  },
+  twitter_url: {
+    type: String,
+    maxlength: 500,
+    trim: true
+  },
+  tiktok_url: {
+    type: String,
+    maxlength: 500,
+    trim: true
+  },
   
   // Localisation dans le centre
-  numero_emplacement: String,
-  etage: String,
-  zone: String,
-  surface_m2: Number,
+  numero_emplacement: {
+    type: String,
+    maxlength: 50,
+    trim: true
+  },
+  etage: {
+    type: String,
+    maxlength: 50,
+    trim: true
+  },
+  zone: {
+    type: String,
+    maxlength: 100,
+    trim: true
+  },
+  surface_m2: {
+    type: Number,
+    default: null
+  },
   
   // Coordonnées GPS (pour plan interactif)
-  position_x: Number,
-  position_y: Number,
+  position_x: {
+    type: Number,
+    default: null
+  },
+  position_y: {
+    type: Number,
+    default: null
+  },
   
   // Horaires (JSON pour flexibilité)
   horaires: {
-    type: Map,
-    of: {
-      ouverture: String,
-      fermeture: String
-    }
+    type: mongoose.Schema.Types.Mixed,
+    default: {}
   },
   
   // Services proposés
-  services: [String], // Array: ["livraison", "retrait", "click_and_collect", etc.]
+  services: {
+    type: [String],
+    default: []
+  },
   
   // Galerie photos
-  galerie_photos: [String], // Array d'URLs
+  galerie_photos: {
+    type: [String],
+    default: []
+  },
   
   // Statistiques
   note_moyenne: {
@@ -83,37 +148,56 @@ const boutiqueSchema = new mongoose.Schema({
   },
   nombre_avis: {
     type: Number,
-    default: 0
+    default: 0,
+    min: 0
   },
   nombre_vues: {
     type: Number,
-    default: 0
+    default: 0,
+    min: 0
   },
   nombre_favoris: {
     type: Number,
-    default: 0
+    default: 0,
+    min: 0
   },
   
   // Statut et validation
   statut: {
     type: String,
-    enum: ['en_attente', 'validee', 'active', 'suspendue', 'fermee'],
+    enum: {
+      values: ['en_attente', 'validee', 'active', 'suspendue', 'fermee'],
+      message: 'Le statut doit être: en_attente, validee, active, suspendue ou fermee'
+    },
     default: 'en_attente'
   },
-  date_validation: Date,
+  date_validation: {
+    type: Date,
+    default: null
+  },
   validee_par: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
+    ref: 'User',
+    default: null
   },
   
   // Abonnement/Plan
   plan: {
     type: String,
-    enum: ['basique', 'premium', 'vip'],
+    enum: {
+      values: ['basique', 'premium', 'vip'],
+      message: 'Le plan doit être: basique, premium ou vip'
+    },
     default: 'basique'
   },
-  date_debut_abonnement: Date,
-  date_fin_abonnement: Date,
+  date_debut_abonnement: {
+    type: Date,
+    default: null
+  },
+  date_fin_abonnement: {
+    type: Date,
+    default: null
+  },
   
   // Métadonnées
   date_creation: {
@@ -125,12 +209,13 @@ const boutiqueSchema = new mongoose.Schema({
     default: Date.now
   }
 }, {
-  timestamps: { createdAt: 'date_creation', updatedAt: 'date_modification' }
+  timestamps: { createdAt: 'date_creation', updatedAt: 'date_modification' },
+  collection: 'boutiques'
 });
 
-// Index
+// Index (correspondant au schéma SQL)
 boutiqueSchema.index({ utilisateur_id: 1 });
-boutiqueSchema.index({ slug: 1 });
+boutiqueSchema.index({ slug: 1 }, { unique: true });
 boutiqueSchema.index({ categorie_principale: 1 });
 boutiqueSchema.index({ statut: 1 });
 boutiqueSchema.index({ note_moyenne: -1 });

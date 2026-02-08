@@ -36,34 +36,34 @@ export const NavigationItems: NavigationItem[] = [
       }
     ]
   },
-  {
-    id: 'authentication',
-    title: 'Authentication',
-    type: 'group',
-    icon: 'icon-navigation',
-    children: [
-      {
-        id: 'login',
-        title: 'Login',
-        type: 'item',
-        classes: 'nav-item',
-        url: '/login',
-        icon: 'login',
-        target: true,
-        breadcrumbs: false
-      },
-      {
-        id: 'register',
-        title: 'Register',
-        type: 'item',
-        classes: 'nav-item',
-        url: '/register',
-        icon: 'profile',
-        target: true,
-        breadcrumbs: false
-      }
-    ]
-  },
+  // {
+  //   id: 'authentication',
+  //   title: 'Authentication',
+  //   type: 'group',
+  //   icon: 'icon-navigation',
+  //   children: [
+  //     {
+  //       id: 'login',
+  //       title: 'Login',
+  //       type: 'item',
+  //       classes: 'nav-item',
+  //       url: '/login',
+  //       icon: 'login',
+  //       target: true,
+  //       breadcrumbs: false
+  //     },
+  //     {
+  //       id: 'register',
+  //       title: 'Register',
+  //       type: 'item',
+  //       classes: 'nav-item',
+  //       url: '/register',
+  //       icon: 'profile',
+  //       target: true,
+  //       breadcrumbs: false
+  //     }
+  //   ]
+  // },
   {
     id: 'utilities',
     title: 'UI Components',
@@ -122,6 +122,23 @@ export const NavigationItems: NavigationItem[] = [
         icon: 'question',
         target: true,
         external: true
+      }
+    ]
+  },
+  
+  {
+    id: 'myspace',
+    title: 'MySpace',
+    type: 'group',
+    icon: 'icon-navigation',
+    children: [
+      {
+        id: 'myspace-home',
+        title: 'MySpace',
+        type: 'item',
+        classes: 'nav-item',
+        url: '/myspace',
+        icon: 'user'
       }
     ]
   }

@@ -37,6 +37,10 @@ const routes: Routes = [
       {
         path: 'test-connection',
         loadComponent: () => import('./demo/pages/test-connection/test-connection.component').then((c) => c.TestConnectionComponent)
+      },
+      {
+        path: 'myspace',
+        loadComponent: () => import('./demo/pages/myspace/myspace.component').then((c) => c.MySpaceComponent)
       }
     ]
   },
