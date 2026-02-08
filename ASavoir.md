@@ -1,5 +1,7 @@
 /home/rebeca/Bureau/ITU-Master/WEV Avance/master-exam/m1p13mean-Rebeca-Aina/Frontend/Boutique/src/app/theme/layouts/admin-layout/navigation/navigation.ts (contenue nav bar)
 
+/home/rebeca/Bureau/ITU-Master/WEV Avance/master-exam/m1p13mean-Rebeca-Aina/Frontend/Boutique/src/app/app-routing.module.ts (definir un route)
+
 db.boutiques.insertOne({
   utilisateur_id: ObjectId("69838220b0789e50b2703ce5"), // ID de ton utilisateur
   nom: "Fanelie Boutique",

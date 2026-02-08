@@ -7,7 +7,9 @@ import { environment } from '../../environments/environment';
 export interface User {
   id: string;
   email: string;
-  name: string;
+  name?: string; // Pour compatibilité
+  nom?: string; // Nom du backend
+  prenom?: string;
   role: 'admin' | 'boutique' | 'client';
   telephone?: string;
   avatar_url?: string;

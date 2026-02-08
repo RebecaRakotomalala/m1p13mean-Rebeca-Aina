@@ -1,0 +1,180 @@
+.boutique-header {
+  overflow: visible;
+  border-radius: 8px 8px 0 0;
+  position: relative;
+}
+
+.banniere-img {
+  border-radius: 8px 8px 0 0;
+}
+
+.banniere-placeholder {
+  border-radius: 8px 8px 0 0;
+}
+
+.logo-container {
+  bottom: -60px;
+  left: 30px;
+  z-index: 15;
+}
+
+.logo-img {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.logo-placeholder {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.boutique-header-info {
+  margin-top: 70px;
+  position: relative;
+  z-index: 1;
+}
+
+.photo-thumbnail {
+  transition: transform 0.2s;
+  
+  &:hover {
+    transform: scale(1.05);
+    
+    .photo-delete-btn {
+      opacity: 1;
+    }
+  }
+  
+  img {
+    transition: opacity 0.2s;
+    
+    &:hover {
+      opacity: 0.9;
+    }
+  }
+}
+
+.photo-delete-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  opacity: 0;
+  transition: opacity 0.2s;
+  z-index: 10;
+  
+  &:hover {
+    opacity: 1 !important;
+  }
+}
+
+.logo-wrapper {
+  position: relative;
+}
+
+.logo-display-wrapper {
+  position: relative;
+  cursor: pointer;
+  transition: transform 0.2s;
+  
+  &:hover {
+    transform: scale(1.05);
+    
+    .logo-actions {
+      opacity: 1;
+    }
+  }
+}
+
+.logo-actions {
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.3s;
+  z-index: 10;
+}
+
+.logo-action-btn {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  
+  i {
+    font-size: 14px;
+  }
+}
+
+.logo-upload-wrapper {
+  cursor: pointer;
+  transition: transform 0.2s;
+  
+  &:hover {
+    transform: scale(1.05);
+  }
+  
+  &.uploading {
+    cursor: wait;
+    pointer-events: none;
+  }
+}
+
+.logo-container {
+  bottom: -60px;
+  left: 30px;
+  z-index: 10;
+  
+  .upload-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 20;
+    color: white;
+  }
+}
+
+// Modal personnalisé
+.modal-backdrop {
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal.show {
+  display: block !important;
+}
+
+.badge {
+  font-size: 0.75rem;
+  padding: 0.35em 0.65em;
+}
+
+@media (max-width: 768px) {
+  .logo-container {
+    left: 15px;
+    bottom: -50px;
+  }
+  
+  .logo-img,
+  .logo-placeholder {
+    width: 100px !important;
+    height: 100px !important;
+  }
+  
+  .boutique-header-info {
+    margin-top: 50px;
+    padding: 1.5rem !important;
+  }
+}
+

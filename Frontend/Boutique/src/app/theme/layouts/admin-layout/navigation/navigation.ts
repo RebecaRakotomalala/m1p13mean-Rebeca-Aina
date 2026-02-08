@@ -124,5 +124,22 @@ export const NavigationItems: NavigationItem[] = [
         external: true
       }
     ]
+  },
+  
+  {
+    id: 'myspace',
+    title: 'MySpace',
+    type: 'group',
+    icon: 'icon-navigation',
+    children: [
+      {
+        id: 'myspace-home',
+        title: 'MySpace',
+        type: 'item',
+        classes: 'nav-item',
+        url: '/myspace',
+        icon: 'user'
+      }
+    ]
   }
 ];

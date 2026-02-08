@@ -15,6 +15,14 @@ const boutiqueSchema = new mongoose.Schema({
     trim: true,
     maxlength: 200
   },
+  slug: {
+    type: String,
+    required: [true, 'Le slug de la boutique est requis'],
+    unique: true,
+    lowercase: true,
+    trim: true,
+    maxlength: 200
+  },
   description_courte: {
     type: String,
     maxlength: 500,
