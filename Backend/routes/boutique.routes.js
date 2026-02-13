@@ -1,29 +1,18 @@
-/**
- * Routes pour les boutiques
- * Utilise Express Router pour organiser les routes
- */
-
 const express = require('express');
 const router = express.Router();
 const boutiqueController = require('../controllers/boutique.controller');
+const { verifyToken, isBoutiqueOrAdmin } = require('../middlewares/auth.middleware');
 
-// Créer une nouvelle boutique
-router.post('/', boutiqueController.createBoutique);
-
-// Obtenir toutes les boutiques
+// Routes publiques - routes specifiques avant :id
 router.get('/', boutiqueController.getAllBoutiques);
 
-// Obtenir une boutique par ID
+// Routes protegees - routes specifiques avant :id
+router.get('/user/:userId', verifyToken, boutiqueController.getBoutiquesByUserId);
+router.post('/', verifyToken, isBoutiqueOrAdmin, boutiqueController.createBoutique);
+
+// Routes avec :id (doivent etre en dernier)
 router.get('/:id', boutiqueController.getBoutiqueById);
-
-// Obtenir les boutiques d'un utilisateur spécifique
-router.get('/user/:userId', boutiqueController.getBoutiquesByUserId);
-
-// Mettre à jour une boutique
-router.put('/:id', boutiqueController.updateBoutique);
-
-// Supprimer une boutique
-router.delete('/:id', boutiqueController.deleteBoutique);
+router.put('/:id', verifyToken, isBoutiqueOrAdmin, boutiqueController.updateBoutique);
+router.delete('/:id', verifyToken, isBoutiqueOrAdmin, boutiqueController.deleteBoutique);
 
 module.exports = router;
-
