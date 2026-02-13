@@ -1,23 +1,19 @@
-/**
- * Routes d'authentification
- * Utilise Express Router pour organiser les routes
- */
-
 const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/auth.controller');
+const { verifyToken, isAdmin } = require('../middlewares/auth.middleware');
 
-// Route d'inscription
+// Routes publiques
 router.post('/register', authController.register);
-
-// Route de connexion
 router.post('/login', authController.login);
 
-// Route pour obtenir tous les utilisateurs (pour test)
-router.get('/users', authController.getAllUsers);
+// Routes protegees
+router.get('/profile', verifyToken, authController.getProfile);
+router.put('/profile', verifyToken, authController.updateProfile);
 
-// Route pour obtenir les utilisateurs par rôle
-router.get('/users/role/:role', authController.getUsersByRole);
+// Routes admin
+router.get('/users', verifyToken, isAdmin, authController.getAllUsers);
+router.get('/users/role/:role', verifyToken, isAdmin, authController.getUsersByRole);
+router.put('/users/:id/toggle-status', verifyToken, isAdmin, authController.toggleUserStatus);
 
 module.exports = router;
-

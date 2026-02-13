@@ -1,0 +1,38 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+main {
+  flex: 1;
+}
+
+.navbar {
+  z-index: 1030;
+}
+
+.navbar-brand img {
+  transition: transform 0.2s;
+}
+
+.navbar-brand:hover img {
+  transform: scale(1.05);
+}
+
+.nav-link {
+  font-weight: 500;
+  color: #333;
+  padding: 0.5rem 1rem !important;
+  transition: color 0.2s;
+
+  &:hover, &.active {
+    color: #4680ff;
+  }
+}
+
+footer {
+  a:hover {
+    color: #fff !important;
+  }
+}

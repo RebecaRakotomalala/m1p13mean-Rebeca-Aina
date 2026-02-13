@@ -4,6 +4,10 @@
  */
 
 const User = require('../models/User');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+
+const JWT_SECRET = process.env.JWT_SECRET || 'mallconnect_secret_key_2026';
 
 // Inscription (Register) avec support des rôles
 exports.register = async (req, res) => {
@@ -31,10 +35,14 @@ exports.register = async (req, res) => {
       });
     }
 
+    // Hasher le mot de passe
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
     // Créer un nouvel utilisateur
     const user = new User({
       email: email.toLowerCase(),
-      mot_de_passe_hash: password, // En production, utiliser bcrypt pour hasher
+      mot_de_passe_hash: hashedPassword,
       nom: name,
       role: userRole,
       telephone: telephone || undefined
@@ -42,9 +50,17 @@ exports.register = async (req, res) => {
 
     await user.save();
 
+    // Générer le token JWT
+    const token = jwt.sign(
+      { id: user._id, email: user.email, role: user.role },
+      JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+
     res.status(201).json({
       success: true,
       message: 'Utilisateur créé avec succès!',
+      token: token,
       user: {
         id: user._id,
         email: user.email,
@@ -87,8 +103,9 @@ exports.login = async (req, res) => {
       });
     }
 
-    // Vérifier le mot de passe (en production, utiliser bcrypt.compare)
-    if (user.mot_de_passe_hash !== password) {
+    // Vérifier le mot de passe avec bcrypt
+    const isMatch = await bcrypt.compare(password, user.mot_de_passe_hash);
+    if (!isMatch) {
       return res.status(401).json({
         success: false,
         message: 'Email ou mot de passe incorrect'
@@ -103,10 +120,18 @@ exports.login = async (req, res) => {
       });
     }
 
+    // Générer le token JWT
+    const token = jwt.sign(
+      { id: user._id, email: user.email, role: user.role },
+      JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+
     // Connexion réussie
     res.json({
       success: true,
       message: 'Connexion réussie!',
+      token: token,
       user: {
         id: user._id,
         email: user.email,
@@ -127,7 +152,68 @@ exports.login = async (req, res) => {
   }
 };
 
-// Obtenir tous les utilisateurs (pour test)
+// Obtenir le profil de l'utilisateur connecté
+exports.getProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select('-mot_de_passe_hash');
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'Utilisateur non trouvé'
+      });
+    }
+    res.json({
+      success: true,
+      user: user
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors de la récupération du profil',
+      error: error.message
+    });
+  }
+};
+
+// Mettre à jour le profil de l'utilisateur connecté
+exports.updateProfile = async (req, res) => {
+  try {
+    const { nom, prenom, telephone, avatar_url } = req.body;
+    
+    const updateData = {};
+    if (nom) updateData.nom = nom;
+    if (prenom) updateData.prenom = prenom;
+    if (telephone) updateData.telephone = telephone;
+    if (avatar_url) updateData.avatar_url = avatar_url;
+
+    const user = await User.findByIdAndUpdate(
+      req.user._id,
+      { $set: updateData },
+      { new: true }
+    ).select('-mot_de_passe_hash');
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'Utilisateur non trouvé'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Profil mis à jour avec succès',
+      user: user
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors de la mise à jour du profil',
+      error: error.message
+    });
+  }
+};
+
+// Obtenir tous les utilisateurs (admin)
 exports.getAllUsers = async (req, res) => {
   try {
     const users = await User.find().select('-mot_de_passe_hash');
@@ -174,3 +260,36 @@ exports.getUsersByRole = async (req, res) => {
   }
 };
 
+// Activer/Désactiver un utilisateur (admin)
+exports.toggleUserStatus = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'Utilisateur non trouvé'
+      });
+    }
+
+    user.actif = !user.actif;
+    await user.save();
+
+    res.json({
+      success: true,
+      message: `Utilisateur ${user.actif ? 'activé' : 'désactivé'} avec succès`,
+      user: {
+        id: user._id,
+        email: user.email,
+        nom: user.nom,
+        role: user.role,
+        actif: user.actif
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors du changement de statut',
+      error: error.message
+    });
+  }
+};
