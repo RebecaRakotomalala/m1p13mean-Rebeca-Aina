@@ -1,0 +1,420 @@
+<div class="historique-container">
+  <!-- Header avec statistiques -->
+  <div class="row g-4 mb-4">
+    <div class="col-md-3">
+      <app-card cardClass="stat-card stat-card-primary">
+        <div class="stat-card-content">
+          <div class="stat-icon stat-icon-primary">
+            <i antIcon type="shopping" theme="outline" class="f-24"></i>
+          </div>
+          <div class="stat-info">
+            <h3 class="stat-value">{{ stats.totalCommandes }}</h3>
+            <p class="stat-label">Total commandes</p>
+          </div>
+        </div>
+      </app-card>
+    </div>
+
+    <div class="col-md-3">
+      <app-card cardClass="stat-card stat-card-success">
+        <div class="stat-card-content">
+          <div class="stat-icon stat-icon-success">
+            <i antIcon type="account-book" theme="outline" class="f-24"></i>
+          </div>
+          <div class="stat-info">
+            <h3 class="stat-value">{{ (stats.totalVentes / 1000) | number:'1.0-0' }}k Ar</h3>
+            <p class="stat-label">Total ventes</p>
+          </div>
+        </div>
+      </app-card>
+    </div>
+
+    <div class="col-md-3">
+      <app-card cardClass="stat-card stat-card-info">
+        <div class="stat-card-content">
+          <div class="stat-icon stat-icon-info">
+            <i antIcon type="check-circle" theme="outline" class="f-24"></i>
+          </div>
+          <div class="stat-info">
+            <h3 class="stat-value">{{ stats.commandesLivrees }}</h3>
+            <p class="stat-label">Commandes livrées</p>
+          </div>
+        </div>
+      </app-card>
+    </div>
+
+    <div class="col-md-3">
+      <app-card cardClass="stat-card stat-card-warning">
+        <div class="stat-card-content">
+          <div class="stat-icon stat-icon-warning">
+            <i antIcon type="bar-chart" theme="outline" class="f-24"></i>
+          </div>
+          <div class="stat-info">
+            <h3 class="stat-value">{{ (stats.moyennePanier / 1000) | number:'1.0-0' }}k Ar</h3>
+            <p class="stat-label">Panier moyen</p>
+          </div>
+        </div>
+      </app-card>
+    </div>
+  </div>
+
+  <!-- Filtres et actions -->
+  <app-card cardTitle="Historique des Commandes" cardClass="filters-card">
+    <div class="filters-section mb-4">
+      <div class="row g-3">
+        <!-- Recherche -->
+        <div class="col-md-4">
+          <div class="input-group">
+            <span class="input-group-text">
+              <i antIcon type="search" theme="outline" class="f-14"></i>
+            </span>
+            <input 
+              type="text" 
+              class="form-control" 
+              placeholder="Rechercher par numéro, client..."
+              [(ngModel)]="searchTerm"
+              (ngModelChange)="onFilterChange()"
+            >
+          </div>
+        </div>
+
+        <!-- Filtre statut -->
+        <div class="col-md-2">
+          <select 
+            class="form-select" 
+            [(ngModel)]="filterStatut"
+            (ngModelChange)="onFilterChange()"
+          >
+            <option *ngFor="let s of statuts" [value]="s.value">{{ s.label }}</option>
+          </select>
+        </div>
+
+        <!-- Filtre paiement -->
+        <div class="col-md-2">
+          <select 
+            class="form-select" 
+            [(ngModel)]="filterPaiement"
+            (ngModelChange)="onFilterChange()"
+          >
+            <option value="all">Tous les paiements</option>
+            <option value="en_attente">En attente</option>
+            <option value="paye">Payé</option>
+            <option value="echoue">Échoué</option>
+            <option value="rembourse">Remboursé</option>
+          </select>
+        </div>
+
+        <!-- Date début -->
+        <div class="col-md-2">
+          <input 
+            type="date" 
+            class="form-control" 
+            [(ngModel)]="filterDateDebut"
+            (ngModelChange)="onFilterChange()"
+          >
+        </div>
+
+        <!-- Date fin -->
+        <div class="col-md-2">
+          <input 
+            type="date" 
+            class="form-control" 
+            [(ngModel)]="filterDateFin"
+            (ngModelChange)="onFilterChange()"
+          >
+        </div>
+      </div>
+
+      <div class="row g-3 mt-2">
+        <!-- Montant min -->
+        <div class="col-md-3">
+          <input 
+            type="number" 
+            class="form-control" 
+            placeholder="Montant min (Ar)"
+            [(ngModel)]="filterMontantMin"
+            (ngModelChange)="onFilterChange()"
+          >
+        </div>
+
+        <!-- Montant max -->
+        <div class="col-md-3">
+          <input 
+            type="number" 
+            class="form-control" 
+            placeholder="Montant max (Ar)"
+            [(ngModel)]="filterMontantMax"
+            (ngModelChange)="onFilterChange()"
+          >
+        </div>
+
+        <!-- Actions -->
+        <div class="col-md-6 text-end">
+          <button 
+            class="btn btn-outline-secondary me-2" 
+            (click)="resetFilters()"
+            title="Réinitialiser les filtres"
+          >
+            <i antIcon type="reload" theme="outline" class="f-14 me-1"></i>
+            Réinitialiser
+          </button>
+          <button 
+            class="btn btn-outline-primary me-2" 
+            (click)="viewMode = viewMode === 'list' ? 'chart' : 'list'"
+            [title]="viewMode === 'list' ? 'Voir les graphiques' : 'Voir la liste'"
+          >
+            <i antIcon [type]="viewMode === 'list' ? 'bar-chart' : 'unordered-list'" theme="outline" class="f-14 me-1"></i>
+            {{ viewMode === 'list' ? 'Graphiques' : 'Liste' }}
+          </button>
+          <button 
+            class="btn btn-primary" 
+            (click)="exportData()"
+            title="Exporter les données"
+          >
+            <i antIcon type="download" theme="outline" class="f-14 me-1"></i>
+            Exporter
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Résultats -->
+    <div class="results-info mb-3">
+      <span class="text-muted">
+        {{ commandesFiltrees.length }} commande(s) trouvée(s)
+        <span *ngIf="commandesFiltrees.length !== commandes.length">
+          (sur {{ commandes.length }} au total)
+        </span>
+      </span>
+    </div>
+
+    <!-- Loading -->
+    <div *ngIf="loading" class="text-center py-5">
+      <div class="spinner-border text-primary" role="status"></div>
+      <p class="mt-2 text-muted">Chargement...</p>
+    </div>
+
+    <!-- Error -->
+    <div *ngIf="error && !loading" class="alert alert-danger">
+      <i antIcon type="close-circle" theme="outline" class="f-16 me-2"></i>
+      {{ error }}
+    </div>
+
+    <!-- Vue Liste -->
+    <div *ngIf="!loading && viewMode === 'list'">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>N° Commande</th>
+              <th>Client</th>
+              <th>Date</th>
+              <th>Montant</th>
+              <th>Statut</th>
+              <th>Paiement</th>
+              <th class="text-end">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let cmd of commandesFiltrees" class="commande-row">
+              <td>
+                <strong>{{ cmd.numero_commande }}</strong>
+              </td>
+              <td>
+                <div>
+                  <strong>{{ cmd.client_nom || 'N/A' }}</strong>
+                  <br>
+                  <small class="text-muted">{{ cmd.client_email || '' }}</small>
+                </div>
+              </td>
+              <td>
+                <div>
+                  {{ cmd.date_creation | date:'dd/MM/yyyy' }}
+                  <br>
+                  <small class="text-muted">{{ cmd.date_creation | date:'HH:mm' }}</small>
+                </div>
+              </td>
+              <td>
+                <strong>{{ cmd.montant_total | number:'1.0-0' }} Ar</strong>
+                <br>
+                <small class="text-muted">
+                  Sous-total: {{ cmd.sous_total | number:'1.0-0' }} Ar
+                  <span *ngIf="cmd.frais_livraison > 0">
+                    + {{ cmd.frais_livraison | number:'1.0-0' }} Ar (livraison)
+                  </span>
+                </small>
+              </td>
+              <td>
+                <span class="badge" [ngClass]="getStatutClass(cmd.statut)">
+                  <i antIcon 
+                    [type]="cmd.statut === 'livree' ? 'check-circle' : (cmd.statut === 'annulee' ? 'close-circle' : 'clock-circle')" 
+                    theme="outline" 
+                    class="f-12 me-1"
+                  ></i>
+                  {{ getStatutLabel(cmd.statut) }}
+                </span>
+              </td>
+              <td>
+                <span class="badge" [ngClass]="getPaiementClass(cmd.statut_paiement)">
+                  {{ getPaiementLabel(cmd.statut_paiement) }}
+                </span>
+              </td>
+              <td class="text-end">
+                <button 
+                  class="btn btn-sm btn-outline-primary" 
+                  (click)="viewDetails(cmd)"
+                  title="Voir les détails"
+                >
+                  <i antIcon type="eye" theme="outline" class="f-14"></i>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div *ngIf="commandesFiltrees.length === 0" class="text-center py-5">
+        <i antIcon type="history" theme="outline" class="f-48 text-muted mb-3"></i>
+        <h5 class="text-muted">Aucune commande trouvée</h5>
+        <p class="text-muted">Aucune commande ne correspond à vos critères de recherche.</p>
+      </div>
+    </div>
+
+    <!-- Vue Graphiques -->
+    <div *ngIf="!loading && viewMode === 'chart'">
+      <div class="row g-4">
+        <div class="col-12">
+          <app-card cardTitle="Évolution des Ventes" cardClass="chart-card">
+            <div id="sales-history-chart">
+              <apx-chart
+                #salesHistoryChart
+                [series]="salesHistoryChartOptions.series"
+                [chart]="salesHistoryChartOptions.chart"
+                [dataLabels]="salesHistoryChartOptions.dataLabels"
+                [stroke]="salesHistoryChartOptions.stroke"
+                [colors]="salesHistoryChartOptions.colors"
+                [xaxis]="salesHistoryChartOptions.xaxis"
+                [yaxis]="salesHistoryChartOptions.yaxis"
+                [grid]="salesHistoryChartOptions.grid"
+                [fill]="salesHistoryChartOptions.fill"
+                [tooltip]="salesHistoryChartOptions.tooltip"
+              ></apx-chart>
+            </div>
+          </app-card>
+        </div>
+
+        <div class="col-12">
+          <app-card cardTitle="Nombre de Commandes par Jour" cardClass="chart-card">
+            <div id="orders-history-chart">
+              <apx-chart
+                #ordersHistoryChart
+                [series]="ordersHistoryChartOptions.series"
+                [chart]="ordersHistoryChartOptions.chart"
+                [plotOptions]="ordersHistoryChartOptions.plotOptions"
+                [dataLabels]="ordersHistoryChartOptions.dataLabels"
+                [colors]="ordersHistoryChartOptions.colors"
+                [xaxis]="ordersHistoryChartOptions.xaxis"
+                [yaxis]="ordersHistoryChartOptions.yaxis"
+                [grid]="ordersHistoryChartOptions.grid"
+                [tooltip]="ordersHistoryChartOptions.tooltip"
+              ></apx-chart>
+            </div>
+          </app-card>
+        </div>
+      </div>
+    </div>
+  </app-card>
+</div>
+
+<!-- Modal Détails Commande -->
+<div 
+  class="modal fade" 
+  [class.show]="showDetailsModal" 
+  [style.display]="showDetailsModal ? 'block' : 'none'"
+  tabindex="-1"
+  *ngIf="selectedCommande"
+>
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i antIcon type="shopping" theme="outline" class="f-16 me-2"></i>
+          Détails de la commande {{ selectedCommande.numero_commande }}
+        </h5>
+        <button type="button" class="btn-close" (click)="closeDetailsModal()" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <h6>Informations Client</h6>
+            <p class="mb-1"><strong>Nom:</strong> {{ selectedCommande.client_nom }}</p>
+            <p class="mb-1"><strong>Email:</strong> {{ selectedCommande.client_email }}</p>
+          </div>
+          <div class="col-md-6">
+            <h6>Informations Commande</h6>
+            <p class="mb-1"><strong>Date:</strong> {{ selectedCommande.date_creation | date:'dd/MM/yyyy HH:mm' }}</p>
+            <p class="mb-1">
+              <strong>Statut:</strong> 
+              <span class="badge" [ngClass]="getStatutClass(selectedCommande.statut)">
+                {{ getStatutLabel(selectedCommande.statut) }}
+              </span>
+            </p>
+            <p class="mb-1">
+              <strong>Paiement:</strong> 
+              <span class="badge" [ngClass]="getPaiementClass(selectedCommande.statut_paiement)">
+                {{ getPaiementLabel(selectedCommande.statut_paiement) }}
+              </span>
+            </p>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table table-sm">
+            <thead>
+              <tr>
+                <th>Produit</th>
+                <th>Quantité</th>
+                <th>Prix unitaire</th>
+                <th class="text-end">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let ligne of selectedCommande.lignes || []">
+                <td>{{ ligne.nom_produit }}</td>
+                <td>{{ ligne.quantite }}</td>
+                <td>{{ ligne.prix_unitaire | number:'1.0-0' }} Ar</td>
+                <td class="text-end">{{ ligne.prix_total | number:'1.0-0' }} Ar</td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr>
+                <td colspan="3" class="text-end"><strong>Sous-total:</strong></td>
+                <td class="text-end"><strong>{{ selectedCommande.sous_total | number:'1.0-0' }} Ar</strong></td>
+              </tr>
+              <tr *ngIf="selectedCommande.frais_livraison > 0">
+                <td colspan="3" class="text-end"><strong>Frais de livraison:</strong></td>
+                <td class="text-end"><strong>{{ selectedCommande.frais_livraison | number:'1.0-0' }} Ar</strong></td>
+              </tr>
+              <tr>
+                <td colspan="3" class="text-end"><strong>Total:</strong></td>
+                <td class="text-end"><strong>{{ selectedCommande.montant_total | number:'1.0-0' }} Ar</strong></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeDetailsModal()">Fermer</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Backdrop pour le modal -->
+<div 
+  class="modal-backdrop fade" 
+  [class.show]="showDetailsModal"
+  (click)="closeDetailsModal()"
+  *ngIf="showDetailsModal"
+></div>
+

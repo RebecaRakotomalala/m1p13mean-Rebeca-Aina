@@ -88,6 +88,31 @@ export const BoutiqueNavigationItems: NavigationItem[] = [
         classes: 'nav-item',
         url: '/boutique/commandes',
         icon: 'shopping-cart'
+      },
+      {
+        id: 'boutique-historique',
+        title: 'Historiques',
+        type: 'item',
+        classes: 'nav-item',
+        url: '/boutique/historique',
+        icon: 'history'
+      }
+    ]
+  },
+
+  {
+    id: 'myspace',
+    title: 'MySpace',
+    type: 'group',
+    icon: 'icon-navigation',
+    children: [
+      {
+        id: 'myspace-home',
+        title: 'MySpace',
+        type: 'item',
+        classes: 'nav-item',
+        url: '/boutique/myspace',
+        icon: 'user'
       }
     ]
   }

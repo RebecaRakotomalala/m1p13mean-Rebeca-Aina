@@ -1,0 +1,58 @@
+.product-card {
+  transition: transform 0.2s, box-shadow 0.2s;
+  cursor: default;
+  
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+  
+  .card-img-top {
+    transition: opacity 0.2s;
+    
+    &:hover {
+      opacity: 0.9;
+    }
+  }
+}
+
+.table {
+  th {
+    font-weight: 600;
+    background-color: #f8f9fa;
+  }
+  
+  img {
+    transition: transform 0.2s;
+    
+    &:hover {
+      transform: scale(1.1);
+    }
+  }
+}
+
+.modal-backdrop {
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal.show {
+  display: block !important;
+}
+
+// Badges
+.badge {
+  font-size: 0.75rem;
+  padding: 0.35em 0.65em;
+}
+
+// Responsive
+@media (max-width: 768px) {
+  .product-card {
+    margin-bottom: 1rem;
+  }
+  
+  .table-responsive {
+    font-size: 0.875rem;
+  }
+}
+

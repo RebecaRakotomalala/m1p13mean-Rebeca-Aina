@@ -95,7 +95,17 @@ exports.getBoutiqueStats = async (req, res) => {
     }
     const commandesCount = commandeIds.size;
     const totalAvis = await Avis.countDocuments({ boutique_id: { $in: boutiqueIds } });
-    const commandesEnAttente = await LigneCommande.countDocuments({ boutique_id: { $in: boutiqueIds }, statut: 'en_attente' });
+    
+    // Compter les commandes (pas les lignes) avec statut 'en_attente'
+    const commandesEnAttenteResult = await LigneCommande.aggregate([
+      { $match: { boutique_id: { $in: boutiqueIds } } },
+      { $lookup: { from: 'commandes', localField: 'commande_id', foreignField: '_id', as: 'commande' } },
+      { $unwind: '$commande' },
+      { $match: { 'commande.statut': 'en_attente' } },
+      { $group: { _id: '$commande_id' } },
+      { $count: 'total' }
+    ]);
+    const commandesEnAttente = commandesEnAttenteResult.length > 0 ? commandesEnAttenteResult[0].total : 0;
 
     const sixMonthsAgo = new Date();
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
@@ -105,9 +115,18 @@ exports.getBoutiqueStats = async (req, res) => {
       { $sort: { _id: 1 } }
     ]);
 
+    // Calculer les commandes par statut
+    const commandesParStatut = await LigneCommande.aggregate([
+      { $match: { boutique_id: { $in: boutiqueIds } } },
+      { $lookup: { from: 'commandes', localField: 'commande_id', foreignField: '_id', as: 'commande' } },
+      { $unwind: '$commande' },
+      { $group: { _id: '$commande.statut', count: { $sum: 1 } } },
+      { $project: { statut: '$_id', count: 1, _id: 0 } }
+    ]);
+
     res.json({
       success: true,
-      stats: { boutiques, totalProduits, totalVentes, commandesCount, commandesEnAttente, totalAvis, ventesParMois }
+      stats: { boutiques, totalProduits, totalVentes, commandesCount, commandesEnAttente, totalAvis, ventesParMois, commandesParStatut }
     });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Erreur recuperation stats boutique', error: error.message });
