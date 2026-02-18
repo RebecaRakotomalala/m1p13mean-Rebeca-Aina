@@ -14,21 +14,9 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes slideInLeft {
-  from { opacity: 0; transform: translateX(-30px); }
-  to { opacity: 1; transform: translateX(0); }
-}
-
-@keyframes slideInRight {
-  from { opacity: 0; transform: translateX(30px); }
-  to { opacity: 1; transform: translateX(0); }
-}
-
 .animated { animation-fill-mode: both; }
 .fade-in { animation: fadeIn 0.6s ease-out; }
 .slide-in-up { animation: slideInUp 0.5s ease-out; }
-.slide-in-left { animation: slideInLeft 0.5s ease-out; }
-.slide-in-right { animation: slideInRight 0.5s ease-out; }
 
 // === STAT CARDS ===
 .stat-card {
@@ -60,8 +48,8 @@
   }
 
   &-primary { border-left: 4px solid #1677ff; }
-  &-success { border-left: 4px solid #52c41a; }
   &-warning { border-left: 4px solid #faad14; }
+  &-success { border-left: 4px solid #52c41a; }
   &-info { border-left: 4px solid #13c2c2; }
 }
 
@@ -82,8 +70,8 @@
   transition: all 0.3s ease;
 
   &.stat-icon-primary { background: rgba(22, 119, 255, 0.1); color: #1677ff; }
-  &.stat-icon-success { background: rgba(82, 196, 26, 0.1); color: #52c41a; }
   &.stat-icon-warning { background: rgba(250, 173, 20, 0.1); color: #faad14; }
+  &.stat-icon-success { background: rgba(82, 196, 26, 0.1); color: #52c41a; }
   &.stat-icon-info { background: rgba(19, 194, 194, 0.1); color: #13c2c2; }
 }
 
@@ -134,6 +122,18 @@
 
 .table-success-light { background-color: rgba(82, 196, 26, 0.05) !important; }
 
+.product-thumb-sm {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  object-fit: cover;
+}
+
+.produit-list {
+  max-height: 80px;
+  overflow-y: auto;
+}
+
 // === MODAL ===
 .modal-backdrop { background-color: rgba(0, 0, 0, 0.5); }
 .modal.show { display: block !important; }
@@ -164,3 +164,4 @@
   .stat-value { font-size: 1.25rem; }
   .table-responsive { font-size: 0.875rem; }
 }
+

@@ -1,115 +1,105 @@
-<div class="dashboard-container">
-  <!-- Loading State -->
-  <div *ngIf="loading" class="text-center py-5">
-    <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
-      <span class="visually-hidden">Chargement...</span>
-    </div>
+<!-- Loading -->
+@if (loading) {
+  <div class="text-center py-5">
+    <div class="spinner-border text-primary spinner-border-lg" role="status"></div>
     <p class="mt-3 text-muted">Chargement des statistiques...</p>
   </div>
+}
 
-  <!-- Error State -->
-  <div *ngIf="error && !loading" class="alert alert-danger" role="alert">
-    <i antIcon type="exclamation-circle" theme="outline" class="f-16 me-2"></i>
+<!-- Error -->
+@if (error && !loading) {
+  <div class="alert alert-danger">
+    <i antIcon type="exclamation-circle" theme="outline" class="me-2"></i>
     <strong>Erreur :</strong> {{ error }}
-    <button type="button" class="btn btn-sm btn-outline-danger ms-3" (click)="loadStats()">
-      <i antIcon type="reload" theme="outline" class="f-14 me-1"></i>
-      Réessayer
+    <button class="btn btn-sm btn-outline-danger ms-3" (click)="loadStats()">
+      <i antIcon type="reload" theme="outline" class="me-1"></i> Réessayer
     </button>
   </div>
+}
 
-  <!-- Stats Cards -->
-  <div class="row g-4 mb-4" *ngIf="stats && !loading">
-    <!-- Produits Card -->
-    <div class="col-md-6 col-xl-3 slide-in-left animated" [style.animation-delay]="'0ms'">
-      <app-card cardClass="stat-card stat-card-primary">
-        <div class="stat-card-content">
-          <div class="stat-icon stat-icon-primary">
-            <i antIcon type="inbox" theme="outline" class="f-24"></i>
+@if (stats && !loading) {
+  <!-- 🔝 Stats rapides -->
+  <div class="row mb-4">
+    <div class="col-md-6 col-xl-3 mb-3 fade-in animated">
+      <div class="stat-card stat-card-primary">
+        <div class="stat-card-body">
+          <div class="stat-icon-wrapper stat-icon-primary">
+            <i antIcon type="inbox" theme="outline" class="stat-icon-i"></i>
           </div>
           <div class="stat-info">
-            <h3 class="stat-value">{{ stats.totalProduits || 0 }}</h3>
-            <p class="stat-label">Produits actifs</p>
+            <span class="stat-value">{{ stats.totalProduits || 0 }}</span>
+            <span class="stat-label">Produits actifs</span>
           </div>
         </div>
         <div class="stat-card-footer">
-          <a [routerLink]="['/boutique/produits']" class="btn btn-sm btn-outline-primary">
-            <i antIcon type="eye" theme="outline" class="f-14 me-1"></i>
-            Gérer
+          <a [routerLink]="['/boutique/produits']" class="btn btn-sm btn-outline-primary w-100">
+            <i antIcon type="eye" theme="outline" class="me-1"></i> Gérer
           </a>
         </div>
-      </app-card>
+      </div>
     </div>
 
-    <!-- Ventes Card -->
-    <div class="col-md-6 col-xl-3 slide-in-left animated" [style.animation-delay]="'100ms'">
-      <app-card cardClass="stat-card stat-card-success">
-        <div class="stat-card-content">
-          <div class="stat-icon stat-icon-success">
-            <i antIcon type="account-book" theme="outline" class="f-24"></i>
+    <div class="col-md-6 col-xl-3 mb-3 fade-in animated" style="animation-delay: 100ms">
+      <div class="stat-card stat-card-success">
+        <div class="stat-card-body">
+          <div class="stat-icon-wrapper stat-icon-success">
+            <i antIcon type="account-book" theme="outline" class="stat-icon-i"></i>
           </div>
           <div class="stat-info">
-            <h3 class="stat-value">{{ (stats.totalVentes || 0) | number:'1.0-0' }} Ar</h3>
-            <p class="stat-label">{{ stats.commandesCount || 0 }} commandes</p>
+            <span class="stat-value">{{ (stats.totalVentes || 0) | number:'1.0-0' }}</span>
+            <span class="stat-label">Ventes (Ar)</span>
+            <span class="stat-sub">{{ stats.commandesCount || 0 }} commande(s)</span>
           </div>
         </div>
         <div class="stat-card-footer">
-          <a [routerLink]="['/boutique/commandes']" class="btn btn-sm btn-outline-success">
-            <i antIcon type="eye" theme="outline" class="f-14 me-1"></i>
-            Voir
+          <a [routerLink]="['/boutique/commandes']" class="btn btn-sm btn-outline-success w-100">
+            <i antIcon type="eye" theme="outline" class="me-1"></i> Voir
           </a>
         </div>
-      </app-card>
+      </div>
     </div>
 
-    <!-- En attente Card -->
-    <div class="col-md-6 col-xl-3 slide-in-left animated" [style.animation-delay]="'200ms'">
-      <app-card cardClass="stat-card stat-card-warning">
-        <div class="stat-card-content">
-          <div class="stat-icon stat-icon-warning">
-            <i antIcon type="clock-circle" theme="outline" class="f-24"></i>
+    <div class="col-md-6 col-xl-3 mb-3 fade-in animated" style="animation-delay: 200ms">
+      <div class="stat-card stat-card-warning">
+        <div class="stat-card-body">
+          <div class="stat-icon-wrapper stat-icon-warning">
+            <i antIcon type="clock-circle" theme="outline" class="stat-icon-i"></i>
           </div>
           <div class="stat-info">
-            <h3 class="stat-value text-warning">{{ stats.commandesEnAttente || 0 }}</h3>
-            <p class="stat-label">Commandes en attente</p>
+            <span class="stat-value text-warning">{{ stats.commandesEnAttente || 0 }}</span>
+            <span class="stat-label">En attente</span>
+            <span class="stat-sub">À traiter</span>
           </div>
         </div>
         <div class="stat-card-footer">
-          <a [routerLink]="['/boutique/commandes']" [queryParams]="{statut: 'en_attente'}" class="btn btn-sm btn-outline-warning">
-            <i antIcon type="eye" theme="outline" class="f-14 me-1"></i>
-            Voir
+          <a [routerLink]="['/boutique/commandes']" [queryParams]="{statut: 'en_attente'}" class="btn btn-sm btn-outline-warning w-100">
+            <i antIcon type="eye" theme="outline" class="me-1"></i> Voir
           </a>
         </div>
-      </app-card>
+      </div>
     </div>
 
-    <!-- Avis Card -->
-    <div class="col-md-6 col-xl-3 slide-in-left animated" [style.animation-delay]="'300ms'">
-      <app-card cardClass="stat-card stat-card-info">
-        <div class="stat-card-content">
-          <div class="stat-icon stat-icon-info">
-            <i antIcon type="star" theme="outline" class="f-24"></i>
+    <div class="col-md-6 col-xl-3 mb-3 fade-in animated" style="animation-delay: 300ms">
+      <div class="stat-card stat-card-info">
+        <div class="stat-card-body">
+          <div class="stat-icon-wrapper stat-icon-info">
+            <i antIcon type="star" theme="outline" class="stat-icon-i"></i>
           </div>
           <div class="stat-info">
-            <h3 class="stat-value">{{ stats.totalAvis || 0 }}</h3>
-            <p class="stat-label">Avis clients</p>
+            <span class="stat-value">{{ stats.totalAvis || 0 }}</span>
+            <span class="stat-label">Avis clients</span>
+            <span class="stat-sub">Note moyenne</span>
           </div>
         </div>
-        <div class="stat-card-footer">
-          <span class="badge bg-info">
-            <i antIcon type="message" theme="outline" class="f-12 me-1"></i>
-            Avis
-          </span>
-        </div>
-      </app-card>
+      </div>
     </div>
   </div>
 
-  <!-- Charts Section -->
-  <div class="row g-4 mb-4" *ngIf="!loading && salesChartOptions && categoriesChartOptions && ordersChartOptions">
-    <!-- Sales Chart -->
-    <div class="col-lg-8 fade-in-up animated" [style.animation-delay]="'400ms'">
-      <app-card cardTitle="Évolution des Ventes" cardClass="chart-card">
-        <div id="sales-chart">
+  <!-- Graphiques -->
+  @if (salesChartOptions && categoriesChartOptions && ordersChartOptions) {
+    <div class="row g-4 mb-4">
+      <div class="col-lg-8 slide-in-left animated" style="animation-delay: 400ms">
+        <app-card cardTitle="📈 Évolution des Ventes">
           <apx-chart
             #salesChart
             [series]="salesChartOptions.series"
@@ -123,14 +113,11 @@
             [fill]="salesChartOptions.fill"
             [tooltip]="salesChartOptions.tooltip"
           ></apx-chart>
-        </div>
-      </app-card>
-    </div>
+        </app-card>
+      </div>
 
-    <!-- Categories Chart -->
-    <div class="col-lg-4 fade-in-up animated" [style.animation-delay]="'500ms'">
-      <app-card cardTitle="Produits par Catégorie" cardClass="chart-card">
-        <div id="categories-chart">
+      <div class="col-lg-4 slide-in-right animated" style="animation-delay: 500ms">
+        <app-card cardTitle="🍩 Produits par Catégorie">
           <apx-chart
             #categoriesChart
             [series]="categoriesChartOptions.series"
@@ -142,14 +129,11 @@
             [plotOptions]="categoriesChartOptions.plotOptions"
             [tooltip]="categoriesChartOptions.tooltip"
           ></apx-chart>
-        </div>
-      </app-card>
-    </div>
+        </app-card>
+      </div>
 
-    <!-- Orders Chart -->
-    <div class="col-lg-12 fade-in-up animated" [style.animation-delay]="'600ms'">
-      <app-card cardTitle="Commandes par Statut" cardClass="chart-card">
-        <div id="orders-chart">
+      <div class="col-lg-12 slide-in-up animated" style="animation-delay: 600ms">
+        <app-card cardTitle="📊 Commandes par Statut">
           <apx-chart
             #ordersChart
             [series]="ordersChartOptions.series"
@@ -162,78 +146,67 @@
             [grid]="ordersChartOptions.grid"
             [tooltip]="ordersChartOptions.tooltip"
           ></apx-chart>
-        </div>
-      </app-card>
+        </app-card>
+      </div>
     </div>
-  </div>
+  }
 
   <!-- Boutiques Table -->
-  <div class="row" *ngIf="stats?.boutiques?.length > 0 && !loading" class="fade-in-up animated" [style.animation-delay]="'700ms'">
-    <div class="col-12">
-      <app-card cardTitle="Mes Boutiques" cardClass="boutiques-card">
+  @if (stats.boutiques && stats.boutiques.length > 0) {
+    <div class="slide-in-up animated" style="animation-delay: 700ms">
+      <app-card cardTitle="🏪 Mes Boutiques">
         <div class="table-responsive">
-          <table class="table table-hover align-middle">
+          <table class="table table-hover align-middle stock-table">
             <thead class="table-light">
               <tr>
-                <th><i antIcon type="shop" theme="outline" class="f-14 me-1"></i> Nom</th>
-                <th><i antIcon type="appstore" theme="outline" class="f-14 me-1"></i> Catégorie</th>
-                <th><i antIcon type="check-circle" theme="outline" class="f-14 me-1"></i> Statut</th>
-                <th><i antIcon type="star" theme="outline" class="f-14 me-1"></i> Note</th>
-                <th><i antIcon type="eye" theme="outline" class="f-14 me-1"></i> Vues</th>
+                <th><i antIcon type="shop" theme="outline" class="me-1"></i> Nom</th>
+                <th><i antIcon type="appstore" theme="outline" class="me-1"></i> Catégorie</th>
+                <th><i antIcon type="check-circle" theme="outline" class="me-1"></i> Statut</th>
+                <th><i antIcon type="star" theme="outline" class="me-1"></i> Note</th>
+                <th><i antIcon type="eye" theme="outline" class="me-1"></i> Vues</th>
                 <th class="text-end">Actions</th>
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let b of stats.boutiques">
-                <td>
-                  <strong>{{ b.nom }}</strong>
-                </td>
-                <td>
-                  <span class="badge bg-secondary">{{ b.categorie_principale || 'N/A' }}</span>
-                </td>
-                <td>
-                  <span class="badge" [ngClass]="b.statut === 'active' ? 'bg-success' : 'bg-warning'">
-                    <i antIcon [type]="b.statut === 'active' ? 'check-circle' : 'clock-circle'" theme="outline" class="f-12 me-1"></i>
-                    {{ b.statut || 'N/A' }}
-                  </span>
-                </td>
-                <td>
-                  <div class="d-flex align-items-center">
-                    <i antIcon type="star" theme="fill" class="f-14 text-warning me-1"></i>
+              @for (b of stats.boutiques; track b.nom) {
+                <tr>
+                  <td><strong>{{ b.nom }}</strong></td>
+                  <td><span class="badge bg-light text-dark">{{ b.categorie_principale || 'N/A' }}</span></td>
+                  <td>
+                    <span class="badge" [ngClass]="b.statut === 'active' ? 'bg-success' : 'bg-warning'">
+                      {{ b.statut || 'N/A' }}
+                    </span>
+                  </td>
+                  <td>
                     <strong>{{ (b.note_moyenne || 0) | number:'1.1-1' }}</strong>
-                    <span class="text-muted ms-1">/5</span>
-                  </div>
-                </td>
-                <td>
-                  <span class="text-muted">
-                    <i antIcon type="eye" theme="outline" class="f-14 me-1"></i>
-                    {{ b.nombre_vues || 0 }}
-                  </span>
-                </td>
-                <td class="text-end">
-                  <a [routerLink]="['/boutique/myspace']" class="btn btn-sm btn-outline-primary" title="Voir détails">
-                    <i antIcon type="eye" theme="outline" class="f-14"></i>
-                  </a>
-                </td>
-              </tr>
+                    <span class="text-muted">/5</span>
+                  </td>
+                  <td><span class="text-muted">{{ b.nombre_vues || 0 }}</span></td>
+                  <td class="text-end">
+                    <a [routerLink]="['/boutique/myspace']" class="btn btn-sm btn-outline-primary">
+                      <i antIcon type="eye" theme="outline"></i>
+                    </a>
+                  </td>
+                </tr>
+              }
             </tbody>
           </table>
         </div>
       </app-card>
     </div>
-  </div>
+  }
 
   <!-- Empty State -->
-  <div *ngIf="stats && !stats.boutiques?.length && !loading" class="text-center py-5">
-    <app-card cardClass="empty-state-card">
-      <i antIcon type="shop" theme="outline" class="f-48 text-muted mb-3"></i>
-      <h5 class="text-muted">Aucune boutique trouvée</h5>
-      <p class="text-muted">Vous n'avez pas encore de boutique associée à votre compte.</p>
-      <a [routerLink]="['/boutique/myspace']" class="btn btn-primary">
-        <i antIcon type="plus" theme="outline" class="f-14 me-1"></i>
-        Créer une boutique
-      </a>
-    </app-card>
-  </div>
-</div>
-
+  @if (!stats.boutiques?.length) {
+    <div class="text-center py-5 slide-in-up animated">
+      <app-card>
+        <i antIcon type="shop" theme="outline" class="f-48 text-muted d-block mb-3"></i>
+        <h5 class="text-muted">Aucune boutique trouvée</h5>
+        <p class="text-muted">Vous n'avez pas encore de boutique associée.</p>
+        <a [routerLink]="['/boutique/myspace']" class="btn btn-primary">
+          <i antIcon type="plus" theme="outline" class="me-1"></i> Créer une boutique
+        </a>
+      </app-card>
+    </div>
+  }
+}

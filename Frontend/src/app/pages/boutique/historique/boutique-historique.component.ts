@@ -94,6 +94,10 @@ export class BoutiqueHistoriqueComponent implements OnInit {
   selectedCommande: Commande | null = null;
   showDetailsModal = false;
 
+  // Pagination
+  currentPage = 1;
+  pageSize = 10;
+
   // Statuts disponibles
   statuts = [
     { value: 'all', label: 'Tous les statuts' },
@@ -191,8 +195,8 @@ export class BoutiqueHistoriqueComponent implements OnInit {
       ['', 0]
     );
     
-    this.stats.meilleurMois = meilleurMois[0];
-    this.stats.meilleurMoisVentes = meilleurMois[1];
+    this.stats.meilleurMois = meilleurMois[0] as string;
+    this.stats.meilleurMoisVentes = meilleurMois[1] as number;
   }
 
   applyFilters(): void {
@@ -243,6 +247,37 @@ export class BoutiqueHistoriqueComponent implements OnInit {
     filtered.sort((a, b) => new Date(b.date_creation).getTime() - new Date(a.date_creation).getTime());
 
     this.commandesFiltrees = filtered;
+    this.currentPage = 1;
+  }
+
+  // Pagination
+  get totalPages(): number {
+    return Math.ceil(this.commandesFiltrees.length / this.pageSize);
+  }
+
+  get paginatedCommandes(): Commande[] {
+    const start = (this.currentPage - 1) * this.pageSize;
+    return this.commandesFiltrees.slice(start, start + this.pageSize);
+  }
+
+  get pages(): number[] {
+    const total = this.totalPages;
+    const current = this.currentPage;
+    const p: number[] = [];
+    if (total <= 7) {
+      for (let i = 1; i <= total; i++) p.push(i);
+    } else {
+      p.push(1);
+      if (current > 3) p.push(-1);
+      for (let i = Math.max(2, current - 1); i <= Math.min(total - 1, current + 1); i++) p.push(i);
+      if (current < total - 2) p.push(-1);
+      p.push(total);
+    }
+    return p;
+  }
+
+  goToPage(page: number): void {
+    if (page >= 1 && page <= this.totalPages) this.currentPage = page;
   }
 
   initCharts(): void {

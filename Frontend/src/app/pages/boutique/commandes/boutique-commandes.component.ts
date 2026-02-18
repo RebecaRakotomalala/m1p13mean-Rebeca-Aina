@@ -1,134 +1,80 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, RouterModule } from '@angular/router';
+import { IconDirective, IconService } from '@ant-design/icons-angular';
+import {
+  SearchOutline,
+  FilterOutline,
+  ReloadOutline,
+  EyeOutline,
+  ClockCircleOutline,
+  CheckCircleOutline,
+  CloseCircleOutline,
+  ShoppingCartOutline,
+  AccountBookOutline,
+  CalendarOutline,
+  ExclamationCircleOutline
+} from '@ant-design/icons-angular/icons';
 import { ApiService } from '../../../services/api.service';
 import { NotificationService } from '../../../services/notification.service';
 import { CardComponent } from '../../../theme/shared/components/card/card.component';
 
+interface Commande {
+  _id: string;
+  numero_commande: string;
+  client_nom: string;
+  client_email: string;
+  montant_total: number;
+  statut: string;
+  date_creation: string;
+  lignes: Array<{ nom_produit: string; quantite: number; prix_unitaire: number; prix_total: number; image_produit?: string }>;
+}
+
 @Component({
   selector: 'app-boutique-commandes',
   standalone: true,
-  imports: [CommonModule, FormsModule, CardComponent],
-  template: `
-    <app-card cardTitle="Commandes de ma boutique">
-      <!-- Filtres -->
-      <div class="mb-3">
-        <div class="row g-2">
-          <div class="col-md-4">
-            <select class="form-select" [(ngModel)]="filterStatut" (ngModelChange)="applyFilters()">
-              <option value="all">Tous les statuts</option>
-              <option value="en_attente">En attente</option>
-              <option value="confirmee">Confirmée</option>
-              <option value="en_preparation">En préparation</option>
-              <option value="prete">Prête</option>
-              <option value="en_livraison">En livraison</option>
-              <option value="livree">Livrée</option>
-              <option value="annulee">Annulée</option>
-            </select>
-          </div>
-          <div class="col-md-4">
-            <input 
-              type="text" 
-              class="form-control" 
-              placeholder="Rechercher par numéro de commande..."
-              [(ngModel)]="searchTerm"
-              (ngModelChange)="applyFilters()"
-            >
-          </div>
-        </div>
-      </div>
-
-      <!-- Loading -->
-      <div *ngIf="loading" class="text-center py-5">
-        <div class="spinner-border text-primary" role="status"></div>
-        <p class="mt-2 text-muted">Chargement des commandes...</p>
-      </div>
-
-      <!-- Error -->
-      <div *ngIf="error && !loading" class="alert alert-danger">
-        {{ error }}
-        <button class="btn btn-sm btn-outline-danger ms-2" (click)="loadCommandes()">Réessayer</button>
-      </div>
-
-      <!-- Table -->
-      <div *ngIf="!loading && !error" class="table-responsive">
-        <table class="table table-hover align-middle">
-          <thead class="table-light">
-            <tr>
-              <th>N° Commande</th>
-              <th>Client</th>
-              <th>Produits</th>
-              <th>Total</th>
-              <th>Statut</th>
-              <th>Date</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let cmd of commandesFiltrees">
-              <td><strong>{{ cmd.numero_commande }}</strong></td>
-              <td>
-                <div>
-                  <strong>{{ cmd.client_nom || 'N/A' }}</strong>
-                  <br>
-                  <small class="text-muted">{{ cmd.client_email || '' }}</small>
-                </div>
-              </td>
-              <td>
-                <div *ngFor="let l of cmd.lignes">
-                  {{ l.nom_produit }} x{{ l.quantite }}
-                </div>
-              </td>
-              <td><strong>{{ cmd.montant_total | number:'1.0-0' }} Ar</strong></td>
-              <td>
-                <span class="badge" [ngClass]="getStatutClass(cmd.statut)">
-                  {{ getStatutLabel(cmd.statut) }}
-                </span>
-              </td>
-              <td>{{ cmd.date_creation | date:'dd/MM/yyyy HH:mm' }}</td>
-              <td>
-                <select 
-                  class="form-select form-select-sm" 
-                  style="width:auto;display:inline-block;" 
-                  [ngModel]="cmd.statut" 
-                  (ngModelChange)="updateStatut(cmd._id, $event)"
-                >
-                  <option value="en_attente">En attente</option>
-                  <option value="confirmee">Confirmée</option>
-                  <option value="en_preparation">En préparation</option>
-                  <option value="prete">Prête</option>
-                  <option value="en_livraison">En livraison</option>
-                  <option value="livree">Livrée</option>
-                  <option value="annulee">Annulée</option>
-                </select>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-        <div *ngIf="commandesFiltrees.length === 0 && !loading" class="text-center text-muted py-5">
-          <p>Aucune commande trouvée</p>
-          <p *ngIf="filterStatut !== 'all'" class="small">Essayez de changer le filtre de statut</p>
-        </div>
-      </div>
-    </app-card>
-  `
+  imports: [CommonModule, FormsModule, RouterModule, CardComponent, IconDirective],
+  templateUrl: './boutique-commandes.component.html',
+  styleUrls: ['./boutique-commandes.component.scss']
 })
 export class BoutiqueCommandesComponent implements OnInit {
   private api = inject(ApiService);
   private notificationService = inject(NotificationService);
   private route = inject(ActivatedRoute);
-  private router = inject(Router);
+  private iconService = inject(IconService);
 
-  commandes: any[] = [];
-  commandesFiltrees: any[] = [];
+  constructor() {
+    this.iconService.addIcon(
+      SearchOutline, FilterOutline, ReloadOutline, EyeOutline,
+      ClockCircleOutline, CheckCircleOutline, CloseCircleOutline,
+      ShoppingCartOutline, AccountBookOutline, CalendarOutline,
+      ExclamationCircleOutline
+    );
+  }
+
+  commandes: Commande[] = [];
+  commandesFiltrees: Commande[] = [];
   loading = false;
   error: string | null = null;
   filterStatut = 'all';
   searchTerm = '';
 
+  // Stats
+  totalCommandes = 0;
+  commandesEnAttente = 0;
+  commandesLivrees = 0;
+  totalRevenu = 0;
+
+  // Pagination
+  currentPage = 1;
+  pageSize = 10;
+
+  // Détails
+  selectedCommande: Commande | null = null;
+  showDetailsModal = false;
+
   ngOnInit(): void {
-    // Vérifier si on vient du dashboard avec un filtre
     this.route.queryParams.subscribe(params => {
       if (params['statut']) {
         this.filterStatut = params['statut'];
@@ -146,59 +92,100 @@ export class BoutiqueCommandesComponent implements OnInit {
         this.loading = false;
         if (res.success) {
           this.commandes = res.commandes || [];
+          this.calculateStats();
           this.applyFilters();
           if (this.commandes.length === 0) {
             this.notificationService.info('Aucune commande trouvée pour votre boutique');
           }
         } else {
-          this.error = res.message || 'Erreur lors du chargement des commandes';
+          this.error = res.message || 'Erreur lors du chargement';
           this.notificationService.error(this.error);
         }
       },
       error: (err) => {
         this.loading = false;
-        const errorMessage = err.error?.message || err.message || 'Erreur lors du chargement des commandes';
-        this.error = errorMessage;
-        this.notificationService.error(errorMessage);
-        console.error('Erreur chargement commandes:', err);
+        this.error = err.error?.message || 'Erreur lors du chargement';
+        this.notificationService.error(this.error!);
       }
     });
+  }
+
+  calculateStats(): void {
+    this.totalCommandes = this.commandes.length;
+    this.commandesEnAttente = this.commandes.filter(c => c.statut === 'en_attente').length;
+    this.commandesLivrees = this.commandes.filter(c => c.statut === 'livree').length;
+    this.totalRevenu = this.commandes.reduce((sum, c) => sum + (c.montant_total || 0), 0);
   }
 
   applyFilters(): void {
     let filtered = [...this.commandes];
 
-    // Filtre par statut
     if (this.filterStatut !== 'all') {
       filtered = filtered.filter(cmd => cmd.statut === this.filterStatut);
     }
 
-    // Recherche
     if (this.searchTerm) {
       const term = this.searchTerm.toLowerCase();
-      filtered = filtered.filter(cmd => 
+      filtered = filtered.filter(cmd =>
         cmd.numero_commande?.toLowerCase().includes(term) ||
         cmd.client_nom?.toLowerCase().includes(term) ||
         cmd.client_email?.toLowerCase().includes(term)
       );
     }
 
-    // Trier par date (plus récent en premier)
     filtered.sort((a, b) => new Date(b.date_creation).getTime() - new Date(a.date_creation).getTime());
-
     this.commandesFiltrees = filtered;
+    this.currentPage = 1;
+  }
+
+  // Pagination
+  get totalPages(): number {
+    return Math.ceil(this.commandesFiltrees.length / this.pageSize);
+  }
+
+  get paginatedCommandes(): Commande[] {
+    const start = (this.currentPage - 1) * this.pageSize;
+    return this.commandesFiltrees.slice(start, start + this.pageSize);
+  }
+
+  get pages(): number[] {
+    const total = this.totalPages;
+    const current = this.currentPage;
+    const p: number[] = [];
+    if (total <= 7) {
+      for (let i = 1; i <= total; i++) p.push(i);
+    } else {
+      p.push(1);
+      if (current > 3) p.push(-1);
+      for (let i = Math.max(2, current - 1); i <= Math.min(total - 1, current + 1); i++) p.push(i);
+      if (current < total - 2) p.push(-1);
+      p.push(total);
+    }
+    return p;
+  }
+
+  goToPage(page: number): void {
+    if (page >= 1 && page <= this.totalPages) this.currentPage = page;
+  }
+
+  viewDetails(cmd: Commande): void {
+    this.selectedCommande = cmd;
+    this.showDetailsModal = true;
+  }
+
+  closeDetailsModal(): void {
+    this.showDetailsModal = false;
+    this.selectedCommande = null;
   }
 
   updateStatut(id: string, statut: string): void {
     this.api.updateStatutCommande(id, statut).subscribe({
       next: () => {
-        this.notificationService.success('Statut de la commande mis à jour');
+        this.notificationService.success('Statut mis à jour');
         this.loadCommandes();
       },
       error: (err) => {
-        const errorMessage = err.error?.message || err.message || 'Erreur lors de la mise à jour';
-        this.notificationService.error(errorMessage);
-        console.error('Erreur mise à jour statut:', err);
+        this.notificationService.error(err.error?.message || 'Erreur mise à jour');
       }
     });
   }

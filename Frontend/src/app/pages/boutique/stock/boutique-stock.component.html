@@ -1,0 +1,843 @@
+<!-- Loading -->
+@if (loading) {
+  <div class="text-center py-5">
+    <div class="spinner-border text-primary spinner-border-lg" role="status"></div>
+    <p class="mt-3 text-muted">Chargement du stock...</p>
+  </div>
+}
+
+@if (!loading) {
+  <!-- 🔝 Stats rapides -->
+  <div class="row mb-4">
+    <div class="col-md-6 col-xl-3 mb-3 fade-in animated">
+      <div class="stat-card stat-card-primary">
+        <div class="stat-card-body">
+          <div class="stat-icon-wrapper stat-icon-primary">
+            <i antIcon type="container" theme="outline" class="stat-icon-i"></i>
+          </div>
+          <div class="stat-info">
+            <span class="stat-value">{{ totalStock }}</span>
+            <span class="stat-label">Total en stock</span>
+            <span class="stat-sub">{{ totalProduits }} produit(s)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6 col-xl-3 mb-3 fade-in animated" style="animation-delay: 100ms">
+      <div class="stat-card stat-card-warning">
+        <div class="stat-card-body">
+          <div class="stat-icon-wrapper stat-icon-warning">
+            <i antIcon type="warning" theme="outline" class="stat-icon-i"></i>
+          </div>
+          <div class="stat-info">
+            <span class="stat-value text-warning">{{ stockFaible }}</span>
+            <span class="stat-label">Stock faible</span>
+            <span class="stat-sub">Sous le seuil d'alerte</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6 col-xl-3 mb-3 fade-in animated" style="animation-delay: 200ms">
+      <div class="stat-card stat-card-danger">
+        <div class="stat-card-body">
+          <div class="stat-icon-wrapper stat-icon-danger">
+            <i antIcon type="close-circle" theme="outline" class="stat-icon-i"></i>
+          </div>
+          <div class="stat-info">
+            <span class="stat-value text-danger">{{ rupture }}</span>
+            <span class="stat-label">En rupture</span>
+            <span class="stat-sub">Réapprovisionnement urgent</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6 col-xl-3 mb-3 fade-in animated" style="animation-delay: 300ms">
+      <div class="stat-card stat-card-success">
+        <div class="stat-card-body">
+          <div class="stat-icon-wrapper stat-icon-success">
+            <i antIcon type="account-book" theme="outline" class="stat-icon-i"></i>
+          </div>
+          <div class="stat-info">
+            <span class="stat-value text-success">{{ valeurStock | number:'1.0-0' }}</span>
+            <span class="stat-label">Valeur du stock (Ar)</span>
+            <span class="stat-sub">Prix de vente estimé</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="nav-tabs-wrapper mb-4">
+    <ul class="nav nav-pills">
+      <li class="nav-item">
+        <button class="nav-link" [class.active]="activeTab === 'stock'" (click)="activeTab = 'stock'">
+          <i antIcon type="container" theme="outline" class="me-1"></i> Gestion du stock
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link" [class.active]="activeTab === 'historique'" (click)="activeTab = 'historique'">
+          <i antIcon type="history" theme="outline" class="me-1"></i> Historique des mouvements
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link" [class.active]="activeTab === 'csv'" (click)="activeTab = 'csv'">
+          <i antIcon type="upload" theme="outline" class="me-1"></i> Import produits
+        </button>
+      </li>
+    </ul>
+  </div>
+
+  <!-- TAB: Gestion du stock -->
+  @if (activeTab === 'stock') {
+    <div class="slide-in-up animated">
+      <!-- Filtres -->
+      <app-card>
+        <div class="row g-3 align-items-end">
+          <div class="col-md-4">
+            <label class="form-label fw-semibold">
+              <i antIcon type="search" theme="outline" class="me-1"></i> Rechercher
+            </label>
+            <input 
+              type="text" 
+              class="form-control" 
+              placeholder="Nom du produit..."
+              [(ngModel)]="searchTerm"
+              (ngModelChange)="applyFilters()"
+            >
+          </div>
+          <div class="col-md-3">
+            <label class="form-label fw-semibold">
+              <i antIcon type="filter" theme="outline" class="me-1"></i> Statut stock
+            </label>
+            <select class="form-select" [(ngModel)]="filterStock" (ngModelChange)="applyFilters()">
+              <option value="all">Tous</option>
+              <option value="ok">En stock ✓</option>
+              <option value="low">Stock faible ⚠</option>
+              <option value="out">Rupture ✕</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label fw-semibold">Catégorie</label>
+            <select class="form-select" [(ngModel)]="filterCategorie" (ngModelChange)="applyFilters()">
+              <option value="">Toutes</option>
+              @for (cat of categories; track cat) {
+                <option [value]="cat">{{ cat }}</option>
+              }
+            </select>
+          </div>
+          <div class="col-md-2">
+            <button class="btn btn-outline-primary w-100" (click)="loadData()">
+              <i antIcon type="reload" theme="outline" class="me-1"></i> Actualiser
+            </button>
+          </div>
+        </div>
+      </app-card>
+
+      <!-- Tableau du stock -->
+      <app-card cardTitle="Inventaire ({{ produitsFiltres.length }} produits)" class="mt-3">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle stock-table">
+            <thead class="table-light">
+              <tr>
+                <th></th>
+                <th>Produit</th>
+                <th>Catégorie</th>
+                <th>Prix</th>
+                <th style="width: 200px">Stock</th>
+                <th>Seuil</th>
+                <th>Ventes</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (p of paginatedProduits; track p._id) {
+                <tr [class.table-danger]="!p.stock_illimite && p.stock_quantite === 0"
+                    [class.table-warning]="!p.stock_illimite && p.stock_quantite > 0 && p.stock_quantite <= (p.stock_seuil_alerte || 5)">
+                  <td>
+                    @if (p.image_principale) {
+                      <img [src]="p.image_principale" [alt]="p.nom" class="product-thumb">
+                    } @else {
+                      <div class="product-thumb-placeholder">
+                        <i antIcon type="container" theme="outline"></i>
+                      </div>
+                    }
+                  </td>
+                  <td>
+                    <strong>{{ p.nom }}</strong>
+                    <br>
+                    <small class="text-muted">
+                      @if (!p.actif) {
+                        <span class="badge bg-secondary me-1">Inactif</span>
+                      }
+                    </small>
+                  </td>
+                  <td><span class="badge bg-light text-dark">{{ p.categorie }}</span></td>
+                  <td>
+                    @if (p.prix_promo) {
+                      <span class="text-decoration-line-through text-muted small">{{ p.prix_initial | number:'1.0-0' }}</span>
+                      <br>
+                      <strong class="text-danger">{{ p.prix_promo | number:'1.0-0' }} Ar</strong>
+                    } @else {
+                      <strong>{{ p.prix_initial | number:'1.0-0' }} Ar</strong>
+                    }
+                  </td>
+                  <td>
+                    @if (editingId === p._id) {
+                      <div class="d-flex align-items-center gap-2">
+                        <input 
+                          type="number" 
+                          class="form-control form-control-sm" 
+                          [(ngModel)]="editingQte"
+                          min="0"
+                          style="width: 80px"
+                          (keyup.enter)="saveStock(p)"
+                          (keyup.escape)="cancelEdit()"
+                        >
+                        <button class="btn btn-sm btn-success" (click)="saveStock(p)" title="Sauvegarder">
+                          <i antIcon type="check-circle" theme="outline"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-secondary" (click)="cancelEdit()" title="Annuler">✕</button>
+                      </div>
+                    } @else {
+                      <div class="stock-display">
+                        <span class="stock-badge" [ngClass]="getStockBadgeClass(p)">
+                          {{ getStockLabel(p) }}
+                        </span>
+                        <div class="progress mt-1" style="height: 4px">
+                          <div class="progress-bar" [ngClass]="getProgressClass(p)" [style.width.%]="getStockPercent(p)"></div>
+                        </div>
+                      </div>
+                    }
+                  </td>
+                  <td>
+                    @if (!p.stock_illimite) {
+                      <small class="text-muted">{{ p.stock_seuil_alerte || 5 }}</small>
+                    } @else {
+                      <small class="text-muted">-</small>
+                    }
+                  </td>
+                  <td>
+                    <span class="badge bg-primary bg-opacity-10 text-primary">{{ p.nombre_ventes || 0 }}</span>
+                  </td>
+                  <td>
+                    @if (!p.stock_illimite && editingId !== p._id) {
+                      <button class="btn btn-sm btn-outline-primary me-1" (click)="startEdit(p)" title="Modifier le stock">
+                        <i antIcon type="edit" theme="outline"></i>
+                      </button>
+                    }
+                  </td>
+                </tr>
+              }
+
+              @if (produitsFiltres.length === 0) {
+                <tr>
+                  <td colspan="8" class="text-center py-5 text-muted">
+                    <i antIcon type="container" theme="outline" class="f-36 d-block mb-2"></i>
+                    Aucun produit trouvé
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        @if (produitsFiltres.length > pageSize) {
+          <div class="d-flex justify-content-between align-items-center mt-3 px-2">
+            <small class="text-muted">
+              Affichage {{ (currentPage - 1) * pageSize + 1 }} - {{ currentPage * pageSize > produitsFiltres.length ? produitsFiltres.length : currentPage * pageSize }} sur {{ produitsFiltres.length }} produits
+            </small>
+            <nav>
+              <ul class="pagination pagination-sm mb-0">
+                <li class="page-item" [class.disabled]="currentPage === 1">
+                  <button class="page-link" (click)="goToPage(currentPage - 1)">‹</button>
+                </li>
+                @for (page of pages; track $index) {
+                  @if (page === -1) {
+                    <li class="page-item disabled"><span class="page-link">…</span></li>
+                  } @else {
+                    <li class="page-item" [class.active]="page === currentPage">
+                      <button class="page-link" (click)="goToPage(page)">{{ page }}</button>
+                    </li>
+                  }
+                }
+                <li class="page-item" [class.disabled]="currentPage === totalPages">
+                  <button class="page-link" (click)="goToPage(currentPage + 1)">›</button>
+                </li>
+              </ul>
+            </nav>
+          </div>
+        }
+      </app-card>
+
+      <!-- Graphiques -->
+      <div class="row mt-4">
+        <div class="col-md-7 mb-3 slide-in-left animated">
+          <app-card cardTitle="📈 Évolution des sorties de stock (6 mois)">
+            @if (evolutionChartOptions) {
+              <apx-chart
+                [series]="$any(evolutionChartOptions.series)"
+                [chart]="$any(evolutionChartOptions.chart)"
+                [xaxis]="$any(evolutionChartOptions.xaxis)"
+                [yaxis]="$any(evolutionChartOptions.yaxis)"
+                [stroke]="$any(evolutionChartOptions.stroke)"
+                [colors]="$any(evolutionChartOptions.colors)"
+                [fill]="$any(evolutionChartOptions.fill)"
+                [dataLabels]="$any(evolutionChartOptions.dataLabels)"
+                [grid]="$any(evolutionChartOptions.grid)"
+                [tooltip]="$any(evolutionChartOptions.tooltip)"
+                [legend]="$any(evolutionChartOptions.legend)"
+              ></apx-chart>
+            }
+          </app-card>
+        </div>
+
+        <div class="col-md-5 mb-3 slide-in-right animated">
+          <app-card cardTitle="🏆 Top produits vendus">
+            @if (topProduitsChartOptions) {
+              <apx-chart
+                [series]="$any(topProduitsChartOptions.series)"
+                [chart]="$any(topProduitsChartOptions.chart)"
+                [plotOptions]="$any(topProduitsChartOptions.plotOptions)"
+                [colors]="$any(topProduitsChartOptions.colors)"
+                [xaxis]="$any(topProduitsChartOptions.xaxis)"
+                [dataLabels]="$any(topProduitsChartOptions.dataLabels)"
+                [grid]="$any(topProduitsChartOptions.grid)"
+                [tooltip]="$any(topProduitsChartOptions.tooltip)"
+              ></apx-chart>
+            } @else {
+              <div class="text-center text-muted py-5">
+                <p>Aucune vente enregistrée</p>
+              </div>
+            }
+          </app-card>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- TAB: Historique des mouvements -->
+  @if (activeTab === 'historique') {
+    <div class="slide-in-up animated">
+      <!-- Filtre date -->
+      <app-card>
+        <div class="row g-3 align-items-end">
+          <div class="col-md-3">
+            <label class="form-label fw-semibold">
+              <i antIcon type="calendar" theme="outline" class="me-1"></i> Date début
+            </label>
+            <input type="date" class="form-control" [(ngModel)]="dateDebut">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label fw-semibold">Date fin</label>
+            <input type="date" class="form-control" [(ngModel)]="dateFin">
+          </div>
+          <div class="col-md-3">
+            <button class="btn btn-primary me-2" (click)="filterByDate()">
+              <i antIcon type="filter" theme="outline" class="me-1"></i> Filtrer
+            </button>
+            <button class="btn btn-outline-secondary" (click)="resetDateFilter()">
+              <i antIcon type="reload" theme="outline" class="me-1"></i> Reset
+            </button>
+          </div>
+        </div>
+      </app-card>
+
+      <!-- Tableau mouvements -->
+      <app-card cardTitle="Mouvements de stock ({{ mouvements.length }})" class="mt-3">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>Date</th>
+                <th>Type</th>
+                <th>Produit</th>
+                <th>Quantité</th>
+                <th>Montant</th>
+                <th>Commande</th>
+                <th>Client</th>
+                <th>Statut</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (m of paginatedMouvements; track m._id) {
+                <tr>
+                  <td><small>{{ m.date_creation | date:'dd/MM/yyyy HH:mm' }}</small></td>
+                  <td>
+                    <span [ngClass]="getMouvementClass(m)">
+                      <i antIcon [type]="getMouvementIcon(m)" theme="outline" class="me-1"></i>
+                      {{ getMouvementType(m) }}
+                    </span>
+                  </td>
+                  <td>
+                    <div class="d-flex align-items-center gap-2">
+                      @if (m.produit_id?.image_principale || m.image_produit) {
+                        <img [src]="m.produit_id?.image_principale || m.image_produit" class="product-thumb-sm">
+                      }
+                      <span>{{ m.produit_id?.nom || m.nom_produit }}</span>
+                    </div>
+                  </td>
+                  <td>
+                    <strong [ngClass]="getMouvementClass(m)">
+                      {{ getMouvementType(m) === 'Retour' ? '+' : '-' }}{{ m.quantite }}
+                    </strong>
+                  </td>
+                  <td>{{ m.prix_total | number:'1.0-0' }} Ar</td>
+                  <td>
+                    @if (m.commande_id?.numero_commande) {
+                      <span class="badge bg-light text-dark">{{ m.commande_id.numero_commande }}</span>
+                    } @else {
+                      <small class="text-muted">-</small>
+                    }
+                  </td>
+                  <td>
+                    <small>{{ m.commande_id?.client_nom || '-' }}</small>
+                  </td>
+                  <td>
+                    @if (m.commande_id?.statut) {
+                      <span class="badge" [ngClass]="{
+                        'bg-warning': m.commande_id.statut === 'en_attente',
+                        'bg-info': m.commande_id.statut === 'confirmee',
+                        'bg-primary': m.commande_id.statut === 'en_preparation',
+                        'bg-success': m.commande_id.statut === 'livree' || m.commande_id.statut === 'prete',
+                        'bg-danger': m.commande_id.statut === 'annulee'
+                      }">{{ m.commande_id.statut }}</span>
+                    }
+                  </td>
+                </tr>
+              }
+
+              @if (mouvements.length === 0) {
+                <tr>
+                  <td colspan="8" class="text-center py-5 text-muted">
+                    <i antIcon type="history" theme="outline" class="f-36 d-block mb-2"></i>
+                    Aucun mouvement de stock trouvé
+                    @if (dateDebut || dateFin) {
+                      <br><small>Essayez de modifier les dates de filtrage</small>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination mouvements -->
+        @if (mouvements.length > mvtPageSize) {
+          <div class="d-flex justify-content-between align-items-center mt-3 px-2">
+            <small class="text-muted">
+              Affichage {{ (mvtPage - 1) * mvtPageSize + 1 }} - {{ mvtPage * mvtPageSize > mouvements.length ? mouvements.length : mvtPage * mvtPageSize }} sur {{ mouvements.length }} mouvements
+            </small>
+            <nav>
+              <ul class="pagination pagination-sm mb-0">
+                <li class="page-item" [class.disabled]="mvtPage === 1">
+                  <button class="page-link" (click)="goToMvtPage(mvtPage - 1)">‹</button>
+                </li>
+                @for (page of mvtPages; track $index) {
+                  @if (page === -1) {
+                    <li class="page-item disabled"><span class="page-link">…</span></li>
+                  } @else {
+                    <li class="page-item" [class.active]="page === mvtPage">
+                      <button class="page-link" (click)="goToMvtPage(page)">{{ page }}</button>
+                    </li>
+                  }
+                }
+                <li class="page-item" [class.disabled]="mvtPage === totalMvtPages">
+                  <button class="page-link" (click)="goToMvtPage(mvtPage + 1)">›</button>
+                </li>
+              </ul>
+            </nav>
+          </div>
+        }
+      </app-card>
+
+      <!-- Graphique évolution -->
+      <div class="row mt-4">
+        <div class="col-12 slide-in-up animated">
+          <app-card cardTitle="📊 Évolution des sorties de stock">
+            @if (evolutionChartOptions) {
+              <apx-chart
+                [series]="$any(evolutionChartOptions.series)"
+                [chart]="$any(evolutionChartOptions.chart)"
+                [xaxis]="$any(evolutionChartOptions.xaxis)"
+                [yaxis]="$any(evolutionChartOptions.yaxis)"
+                [stroke]="$any(evolutionChartOptions.stroke)"
+                [colors]="$any(evolutionChartOptions.colors)"
+                [fill]="$any(evolutionChartOptions.fill)"
+                [dataLabels]="$any(evolutionChartOptions.dataLabels)"
+                [grid]="$any(evolutionChartOptions.grid)"
+                [tooltip]="$any(evolutionChartOptions.tooltip)"
+                [legend]="$any(evolutionChartOptions.legend)"
+              ></apx-chart>
+            }
+          </app-card>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- TAB: Import données -->
+  @if (activeTab === 'csv') {
+    <div class="slide-in-up animated">
+      <app-card cardTitle="📥 Importer des produits en stock">
+        <!-- Instructions -->
+        <div class="csv-instructions mb-4">
+          <div class="alert alert-info d-flex align-items-start gap-3">
+            <i antIcon type="exclamation-circle" theme="outline" class="mt-1" style="font-size: 20px;"></i>
+            <div>
+              <h6 class="mb-1">Import en masse de produits</h6>
+              <p class="mb-1">Importez vos produits via un fichier CSV ou ajoutez-les manuellement. Colonnes requises :</p>
+              <ul class="mb-2">
+                <li><strong>nom</strong> — Nom du produit</li>
+                <li><strong>categorie</strong> — Catégorie du produit</li>
+                <li><strong>prix_achat</strong> — Coût fournisseur (en Ariary)</li>
+                <li><strong>quantite</strong> — Quantité à stocker</li>
+                <li class="text-muted"><strong>reference_sku</strong> — Référence interne <em>(optionnel)</em></li>
+              </ul>
+              <p class="mb-0 small text-muted">Séparateur accepté : <code>;</code> ou <code>,</code></p>
+            </div>
+          </div>
+
+          <div class="d-flex gap-2 flex-wrap">
+            <button class="btn btn-outline-primary btn-sm" (click)="downloadCsvTemplate()">
+              <i antIcon type="download" theme="outline" class="me-1"></i> Télécharger le template CSV
+            </button>
+            <button class="btn btn-primary btn-sm" (click)="openManualModal()">
+              <i antIcon type="plus" theme="outline" class="me-1"></i> Ajouter un produit manuellement
+            </button>
+          </div>
+        </div>
+
+        <!-- Upload zone -->
+        <div class="csv-upload-zone" [class.has-file]="csvFileName">
+          @if (!csvFileName) {
+            <label for="csvFile" class="csv-dropzone">
+              <i antIcon type="upload" theme="outline" class="csv-upload-icon"></i>
+              <p class="fw-semibold mb-1">Cliquez pour sélectionner un fichier CSV</p>
+              <p class="text-muted small mb-0">Format accepté : .csv</p>
+            </label>
+            <input type="file" id="csvFile" accept=".csv" (change)="onCsvFileSelected($event)" class="d-none">
+          } @else {
+            <div class="csv-file-info">
+              <div class="d-flex align-items-center gap-3">
+                <div class="csv-file-icon">
+                  <i antIcon type="file" theme="outline"></i>
+                </div>
+                <div>
+                  <strong>{{ csvFileName }}</strong>
+                  <br>
+                  <small class="text-success">{{ csvData.length }} produit(s) détecté(s)</small>
+                </div>
+                <button class="btn btn-sm btn-outline-danger ms-auto" (click)="resetCsv()">
+                  <i antIcon type="delete" theme="outline"></i>
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- Aperçu données -->
+        @if (csvData.length > 0) {
+          <div class="mt-4">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+              <h6 class="fw-semibold mb-0">
+                <i antIcon type="eye" theme="outline" class="me-1"></i> Aperçu ({{ csvData.length }} produits)
+              </h6>
+              <button class="btn btn-sm btn-outline-primary" (click)="openManualModal()">
+                <i antIcon type="plus" theme="outline" class="me-1"></i> Ajouter
+              </button>
+            </div>
+            <div class="table-responsive">
+              <table class="table table-sm table-hover stock-table">
+                <thead class="table-light">
+                  <tr>
+                    <th>#</th>
+                    <th>Produit</th>
+                    <th>Catégorie</th>
+                    <th>Prix d'achat</th>
+                    <th>Quantité</th>
+                    <th>SKU</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (row of csvData.slice(0, 30); track $index) {
+                    <tr>
+                      <td class="text-muted">{{ $index + 1 }}</td>
+                      <td><strong>{{ row.nom }}</strong></td>
+                      <td><span class="badge bg-light text-primary">{{ row.categorie }}</span></td>
+                      <td>{{ row.prix_achat | number:'1.0-0' }} Ar</td>
+                      <td>
+                        <span class="fw-semibold">{{ row.quantite }}</span>
+                      </td>
+                      <td><code>{{ row.reference_sku || '-' }}</code></td>
+                      <td>
+                        <button class="btn btn-sm btn-outline-danger btn-icon-sm" (click)="removeCsvRow($index)" title="Supprimer">
+                          <i antIcon type="delete" theme="outline"></i>
+                        </button>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+              @if (csvData.length > 30) {
+                <p class="text-muted small">... et {{ csvData.length - 30 }} produit(s) de plus</p>
+              }
+            </div>
+
+            <!-- Résumé + import -->
+            <div class="csv-summary mt-3">
+              <div class="d-flex align-items-center gap-4 flex-wrap mb-3">
+                <div><span class="text-muted">Total produits :</span> <strong>{{ csvData.length }}</strong></div>
+                <div><span class="text-muted">Quantité totale :</span> <strong>{{ csvTotalQuantite }}</strong></div>
+                <div><span class="text-muted">Catégories :</span> <strong>{{ csvNbCategories }}</strong></div>
+              </div>
+              <div class="d-flex gap-2">
+                <button 
+                  class="btn btn-primary" 
+                  (click)="importCsv()" 
+                  [disabled]="csvImporting"
+                >
+                  @if (csvImporting) {
+                    <span class="spinner-border spinner-border-sm me-1"></span> Import en cours...
+                  } @else {
+                    <i antIcon type="upload" theme="outline" class="me-1"></i> Importer {{ csvData.length }} produit(s)
+                  }
+                </button>
+                <button class="btn btn-outline-secondary" (click)="resetCsv()">Tout effacer</button>
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- Résultat import -->
+        @if (csvResult) {
+          <div class="mt-4">
+            <div class="alert" [ngClass]="csvResult.errors.length === 0 ? 'alert-success' : 'alert-warning'">
+              <h6 class="fw-bold">
+                <i antIcon type="check-circle" theme="outline" class="me-1"></i>
+                Résultat de l'import
+              </h6>
+              <p class="mb-1">
+                ✅ <strong>{{ csvResult.created }}</strong> produit(s) créé(s), <strong>{{ csvResult.updated }}</strong> mis à jour sur {{ csvResult.total }}
+              </p>
+              @if (csvResult.errors.length > 0) {
+                <p class="mb-1">⚠️ <strong>{{ csvResult.errors.length }}</strong> erreur(s) :</p>
+                <ul class="small mb-0">
+                  @for (err of csvResult.errors; track $index) {
+                    <li>{{ err }}</li>
+                  }
+                </ul>
+              }
+            </div>
+          </div>
+        }
+      </app-card>
+    </div>
+  }
+}
+
+<!-- Modal saisie manuelle produit -->
+@if (showManualModal) {
+  <div class="modal-overlay" (click)="closeManualModal()"></div>
+  <div class="modal fade show d-block" tabindex="-1" style="z-index: 1055;">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content modal-custom">
+
+        <!-- Header -->
+        <div class="modal-header-custom">
+          <div class="modal-header-inner">
+            <div class="modal-header-icon">
+              <i antIcon type="plus" theme="outline"></i>
+            </div>
+            <div>
+              <h5 class="mb-0 fw-bold">Ajouter un produit</h5>
+              <small class="opacity-75">Saisie manuelle d'un produit à importer</small>
+            </div>
+          </div>
+          <button type="button" class="modal-close-btn" (click)="closeManualModal()">
+            <i antIcon type="close-circle" theme="outline"></i>
+          </button>
+        </div>
+
+        <!-- Body -->
+        <div class="modal-body p-0">
+          <div class="modal-body-inner">
+
+            <!-- Nom du produit -->
+            <div class="modal-field">
+              <label class="modal-field-label">
+                <i antIcon type="container" theme="outline" class="me-1"></i>
+                Nom du produit <span class="text-danger">*</span>
+              </label>
+              <div class="modal-input-wrap" [class.has-error]="manualErrors['nom']">
+                <input 
+                  type="text" 
+                  class="modal-input"
+                  [(ngModel)]="manualForm.nom"
+                  placeholder="Ex: Fond de teint mat longue tenue"
+                  maxlength="200"
+                >
+              </div>
+              @if (manualErrors['nom']) {
+                <div class="field-error"><i antIcon type="close-circle" theme="outline" class="me-1"></i>{{ manualErrors['nom'] }}</div>
+              }
+            </div>
+
+            <!-- Catégorie -->
+            <div class="modal-field">
+              <label class="modal-field-label">
+                <i antIcon type="filter" theme="outline" class="me-1"></i>
+                Catégorie <span class="text-danger">*</span>
+              </label>
+              <div class="modal-input-wrap" [class.has-error]="manualErrors['categorie']">
+                <input 
+                  type="text" 
+                  class="modal-input"
+                  [(ngModel)]="manualForm.categorie"
+                  placeholder="Ex: Maquillage"
+                  list="categoriesList"
+                >
+                <datalist id="categoriesList">
+                  @for (cat of categoriesDisponibles; track cat) {
+                    <option [value]="cat"></option>
+                  }
+                </datalist>
+              </div>
+              @if (manualErrors['categorie']) {
+                <div class="field-error"><i antIcon type="close-circle" theme="outline" class="me-1"></i>{{ manualErrors['categorie'] }}</div>
+              }
+              @if (categoriesDisponibles.length > 0) {
+                <div class="category-chips mt-2">
+                  @for (cat of categoriesDisponibles; track cat) {
+                    <button class="category-chip" [class.active]="manualForm.categorie === cat" (click)="manualForm.categorie = cat">
+                      {{ cat }}
+                    </button>
+                  }
+                </div>
+              }
+            </div>
+
+            <!-- Ligne Prix + Quantité -->
+            <div class="modal-row">
+              <!-- Prix d'achat (coût) -->
+              <div class="modal-field flex-grow-1">
+                <label class="modal-field-label">
+                  <i antIcon type="account-book" theme="outline" class="me-1"></i>
+                  Prix d'achat (coût) <span class="text-danger">*</span>
+                </label>
+                <div class="prix-input-group" [class.has-error]="manualErrors['prix_achat']">
+                  <input 
+                    type="number" 
+                    class="prix-input"
+                    [(ngModel)]="manualForm.prix_achat"
+                    placeholder="15000"
+                    min="0"
+                    step="100"
+                  >
+                  <span class="prix-input-suffix">Ar</span>
+                </div>
+                @if (manualErrors['prix_achat']) {
+                  <div class="field-error"><i antIcon type="close-circle" theme="outline" class="me-1"></i>{{ manualErrors['prix_achat'] }}</div>
+                }
+              </div>
+
+              <!-- Quantité -->
+              <div class="modal-field flex-grow-1">
+                <label class="modal-field-label">
+                  <i antIcon type="container" theme="outline" class="me-1"></i>
+                  Quantité <span class="text-danger">*</span>
+                </label>
+                <div class="prix-input-group" [class.has-error]="manualErrors['quantite']">
+                  <input 
+                    type="number" 
+                    class="prix-input"
+                    [(ngModel)]="manualForm.quantite"
+                    placeholder="50"
+                    min="0"
+                    step="1"
+                  >
+                  <span class="prix-input-suffix">unités</span>
+                </div>
+                @if (manualErrors['quantite']) {
+                  <div class="field-error"><i antIcon type="close-circle" theme="outline" class="me-1"></i>{{ manualErrors['quantite'] }}</div>
+                }
+              </div>
+            </div>
+
+            <!-- Référence SKU (optionnel) -->
+            <div class="modal-field">
+              <label class="modal-field-label text-muted">
+                <i antIcon type="edit" theme="outline" class="me-1"></i>
+                Référence SKU <span class="text-muted small">(optionnel)</span>
+              </label>
+              <div class="modal-input-wrap">
+                <input 
+                  type="text" 
+                  class="modal-input"
+                  [(ngModel)]="manualForm.reference_sku"
+                  placeholder="Ex: FDT-001"
+                >
+              </div>
+            </div>
+
+            <!-- Résumé si données complètes -->
+            @if (manualForm.nom && manualForm.categorie && manualForm.prix_achat && manualForm.quantite) {
+              <div class="modal-summary">
+                <div class="summary-title">📋 Résumé</div>
+                <div class="summary-grid">
+                  <div class="summary-item">
+                    <span class="summary-label">Produit</span>
+                    <span class="summary-value">{{ manualForm.nom }}</span>
+                  </div>
+                  <div class="summary-item">
+                    <span class="summary-label">Catégorie</span>
+                    <span class="summary-value"><span class="badge bg-light text-primary">{{ manualForm.categorie }}</span></span>
+                  </div>
+                  <div class="summary-item">
+                    <span class="summary-label">Coût unitaire</span>
+                    <span class="summary-value fw-bold">{{ manualForm.prix_achat | number:'1.0-0' }} Ar</span>
+                  </div>
+                  <div class="summary-item">
+                    <span class="summary-label">Quantité</span>
+                    <span class="summary-value fw-bold">{{ manualForm.quantite }}</span>
+                  </div>
+                  <div class="summary-item total">
+                    <span class="summary-label">Valeur totale</span>
+                    <span class="summary-value fw-bold text-primary">{{ (manualForm.prix_achat * manualForm.quantite) | number:'1.0-0' }} Ar</span>
+                  </div>
+                </div>
+              </div>
+            }
+
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="modal-footer-custom">
+          <button class="btn-modal-cancel" (click)="closeManualModal()">
+            Annuler
+          </button>
+          <button 
+            class="btn-modal-secondary" 
+            (click)="addManualToCsv()"
+          >
+            <i antIcon type="plus" theme="outline" class="me-1"></i> Ajouter &amp; continuer
+          </button>
+          <button 
+            class="btn-modal-save" 
+            (click)="saveManualAndClose()"
+          >
+            <i antIcon type="check-circle" theme="outline" class="me-1"></i> Ajouter &amp; fermer
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+}
+

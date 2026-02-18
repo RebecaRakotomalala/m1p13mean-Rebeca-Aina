@@ -74,6 +74,8 @@ export class BoutiqueProduitsComponent implements OnInit {
     );
   }
 
+  Math = Math; // For template use
+
   produits: Produit[] = [];
   produitsFiltres: Produit[] = [];
   boutiques: Boutique[] = [];
@@ -96,6 +98,10 @@ export class BoutiqueProduitsComponent implements OnInit {
   
   // Catégories uniques pour le filtre
   categories: string[] = [];
+
+  // Pagination (table view)
+  currentPage = 1;
+  pageSize = 10;
 
   form: Partial<Produit> = {
     nom: '',
@@ -195,6 +201,39 @@ export class BoutiqueProduitsComponent implements OnInit {
     }
 
     this.produitsFiltres = filtered;
+    this.currentPage = 1;
+  }
+
+  // Pagination
+  get totalPages(): number {
+    return Math.ceil(this.produitsFiltres.length / this.pageSize);
+  }
+
+  get paginatedProduits(): Produit[] {
+    const start = (this.currentPage - 1) * this.pageSize;
+    return this.produitsFiltres.slice(start, start + this.pageSize);
+  }
+
+  get pages(): number[] {
+    const total = this.totalPages;
+    const current = this.currentPage;
+    const p: number[] = [];
+    if (total <= 7) {
+      for (let i = 1; i <= total; i++) p.push(i);
+    } else {
+      p.push(1);
+      if (current > 3) p.push(-1);
+      for (let i = Math.max(2, current - 1); i <= Math.min(total - 1, current + 1); i++) p.push(i);
+      if (current < total - 2) p.push(-1);
+      p.push(total);
+    }
+    return p;
+  }
+
+  goToPage(page: number): void {
+    if (page >= 1 && page <= this.totalPages) {
+      this.currentPage = page;
+    }
   }
 
   resetForm(): void {
@@ -366,7 +405,17 @@ export class BoutiqueProduitsComponent implements OnInit {
   }
 
   getStockText(produit: Produit): string {
-    if (produit.stock_illimite) return 'Illimité';
-    return produit.stock_quantite.toString();
+    if (produit.stock_illimite) return '∞ Illimité';
+    if (produit.stock_quantite === 0) return '✕ Rupture';
+    if (produit.stock_quantite < 5) return `⚠ ${produit.stock_quantite}`;
+    return `✓ ${produit.stock_quantite}`;
+  }
+
+  getActiveCount(): number {
+    return this.produits.filter(p => p.actif !== false).length;
+  }
+
+  getOutOfStockCount(): number {
+    return this.produits.filter(p => !p.stock_illimite && p.stock_quantite === 0).length;
   }
 }
