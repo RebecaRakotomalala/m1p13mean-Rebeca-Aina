@@ -28,7 +28,9 @@ import {
   TeamOutline,
   ShopOutline,
   FileDoneOutline,
-  HistoryOutline
+  HistoryOutline,
+  ContainerOutline,
+  RiseOutline
 } from '@ant-design/icons-angular/icons';
 import { NgScrollbarModule } from 'ngx-scrollbar';
 
@@ -75,7 +77,9 @@ export class NavContentComponent implements OnInit {
         TeamOutline,
         ShopOutline,
         FileDoneOutline,
-        HistoryOutline
+        HistoryOutline,
+        ContainerOutline,
+        RiseOutline
       ]
     );
 

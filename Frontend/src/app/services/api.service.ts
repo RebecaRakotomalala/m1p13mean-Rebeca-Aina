@@ -160,4 +160,30 @@ export class ApiService {
   getBoutiqueStats(): Observable<any> {
     return this.http.get(`${this.baseUrl}/admin/boutique-stats`);
   }
+
+  getStockStats(dateDebut?: string, dateFin?: string): Observable<any> {
+    let params = new HttpParams();
+    if (dateDebut) params = params.set('dateDebut', dateDebut);
+    if (dateFin) params = params.set('dateFin', dateFin);
+    return this.http.get(`${this.baseUrl}/admin/stock-stats`, { params });
+  }
+
+  updateStock(produitId: string, quantite: number): Observable<any> {
+    return this.http.put(`${this.baseUrl}/produits/${produitId}`, { stock_quantite: quantite });
+  }
+
+  // === CSV Import prix d'achat (legacy) ===
+  importPrixAchat(data: Array<{ nom: string; reference_sku?: string; prix_achat: number }>): Observable<any> {
+    return this.http.post(`${this.baseUrl}/admin/import-prix-achat`, { data });
+  }
+
+  // === Import stock en masse (produit + categorie + cout + quantite) ===
+  importStockCsv(data: Array<{ nom: string; categorie: string; prix_achat: number; quantite: number; reference_sku?: string }>): Observable<any> {
+    return this.http.post(`${this.baseUrl}/admin/import-stock`, { data });
+  }
+
+  // === Bénéfice Stats ===
+  getBeneficeStats(): Observable<any> {
+    return this.http.get(`${this.baseUrl}/admin/benefice-stats`);
+  }
 }

@@ -96,6 +96,22 @@ export const BoutiqueNavigationItems: NavigationItem[] = [
         classes: 'nav-item',
         url: '/boutique/historique',
         icon: 'history'
+      },
+      {
+        id: 'boutique-stock',
+        title: 'Stock',
+        type: 'item',
+        classes: 'nav-item',
+        url: '/boutique/stock',
+        icon: 'container'
+      },
+      {
+        id: 'boutique-benefice',
+        title: 'Bénéfice',
+        type: 'item',
+        classes: 'nav-item',
+        url: '/boutique/benefice',
+        icon: 'rise'
       }
     ]
   },

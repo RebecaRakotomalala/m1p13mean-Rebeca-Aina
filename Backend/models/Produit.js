@@ -43,6 +43,11 @@ const produitSchema = new mongoose.Schema({
     required: true,
     min: 0
   },
+  prix_achat: {
+    type: Number,
+    default: 0,
+    min: 0
+  },
   prix_promo: Number,
   pourcentage_reduction: Number,
   date_debut_promo: Date,
