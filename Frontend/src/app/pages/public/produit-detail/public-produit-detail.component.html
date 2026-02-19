@@ -1,0 +1,215 @@
+<!-- Loading -->
+<div class="loading-container" *ngIf="loading">
+  <div class="loader">
+    <div class="loader-ring"></div>
+    <p>Chargement du produit...</p>
+  </div>
+</div>
+
+<!-- 404 -->
+<div class="not-found" *ngIf="!produit && !loading">
+  <div class="not-found-content">
+    <span class="nf-icon">📦</span>
+    <h2>Produit introuvable</h2>
+    <p>Ce produit n'existe pas ou a été retiré.</p>
+    <a routerLink="/catalogue" class="btn-back">← Retour au catalogue</a>
+  </div>
+</div>
+
+<!-- Produit -->
+<div class="product-page" *ngIf="produit && !loading">
+
+  <!-- Breadcrumb -->
+  <div class="container">
+    <nav class="breadcrumb-custom">
+      <a routerLink="/">Accueil</a>
+      <span class="sep">/</span>
+      <a routerLink="/catalogue">Catalogue</a>
+      <span class="sep">/</span>
+      <span class="current">{{ produit.nom }}</span>
+    </nav>
+  </div>
+
+  <!-- Main Product -->
+  <section class="container product-main">
+    <div class="product-grid">
+
+      <!-- Left: Images -->
+      <div class="product-images">
+        <div class="main-image-wrap">
+          <img [src]="selectedImage || produit.image_principale || 'assets/images/authentication/img-placeholder.svg'" [alt]="produit.nom" class="main-image" />
+          <span class="badge-promo" *ngIf="discount > 0">-{{ discount }}%</span>
+          <span class="badge-rupture" *ngIf="isOutOfStock">Rupture</span>
+        </div>
+        <div class="thumbnails" *ngIf="allImages.length > 1">
+          <button *ngFor="let img of allImages" class="thumb" [class.active]="selectedImage === img" (click)="selectImage(img)">
+            <img [src]="img" alt="" />
+          </button>
+        </div>
+      </div>
+
+      <!-- Right: Info -->
+      <div class="product-info">
+        <!-- Boutique -->
+        <a class="boutique-badge" [routerLink]="['/boutiques', produit.boutique_id?._id]" *ngIf="produit.boutique_id?.nom">
+          🏪 {{ produit.boutique_id.nom }}
+        </a>
+
+        <h1 class="product-name">{{ produit.nom }}</h1>
+
+        <!-- Category -->
+        <div class="product-category">
+          <span>{{ produit.categorie }}</span>
+          <span *ngIf="produit.sous_categorie"> / {{ produit.sous_categorie }}</span>
+        </div>
+
+        <!-- Rating -->
+        <div class="product-rating" *ngIf="averageRating > 0">
+          <span class="stars-inline">
+            <span *ngFor="let s of getStarsArray(averageRating)" class="star" [class.filled]="s === 1">★</span>
+          </span>
+          <span class="rating-num">{{ averageRating | number:'1.1-1' }}</span>
+          <span class="rating-divider">·</span>
+          <span class="rating-reviews">{{ avis.length || produit.nombre_avis || 0 }} avis</span>
+          <span class="rating-divider" *ngIf="produit.nombre_ventes > 0">·</span>
+          <span class="rating-sales" *ngIf="produit.nombre_ventes > 0">{{ produit.nombre_ventes }} vendu{{ produit.nombre_ventes > 1 ? 's' : '' }}</span>
+        </div>
+
+        <!-- Description courte -->
+        <p class="short-desc" *ngIf="produit.description_courte">{{ produit.description_courte }}</p>
+
+        <!-- Pricing -->
+        <div class="pricing-block">
+          <span class="current-price">{{ prixFinal | number:'1.0-0' }} Ar</span>
+          <span class="old-price" *ngIf="discount > 0">{{ produit.prix_initial | number:'1.0-0' }} Ar</span>
+          <span class="save-badge" *ngIf="discount > 0">
+            Économisez {{ produit.prix_initial - prixFinal | number:'1.0-0' }} Ar
+          </span>
+        </div>
+
+        <!-- Stock -->
+        <div class="stock-info">
+          <span class="stock-dot" [class.in-stock]="!isOutOfStock" [class.out-stock]="isOutOfStock"></span>
+          <span *ngIf="!isOutOfStock && !produit.stock_illimite">En stock · {{ produit.stock_quantite }} restant{{ produit.stock_quantite > 1 ? 's' : '' }}</span>
+          <span *ngIf="!isOutOfStock && produit.stock_illimite">En stock</span>
+          <span *ngIf="isOutOfStock" class="text-rupture">Rupture de stock</span>
+        </div>
+
+        <!-- Quantity + Cart -->
+        <div class="action-group">
+          <div class="qty-picker">
+            <button class="qty-btn" (click)="decreaseQty()" [disabled]="quantite <= 1">−</button>
+            <input type="number" class="qty-input" [(ngModel)]="quantite" min="1" [max]="produit.stock_illimite ? 999 : produit.stock_quantite" />
+            <button class="qty-btn" (click)="increaseQty()" [disabled]="!produit.stock_illimite && quantite >= produit.stock_quantite">+</button>
+          </div>
+          <button
+            class="btn-cart"
+            [class.added]="cartAdded"
+            [disabled]="isOutOfStock || addingToCart"
+            (click)="addToCart()"
+          >
+            <span *ngIf="!addingToCart && !cartAdded">🛒 Ajouter au panier</span>
+            <span *ngIf="addingToCart">⏳ Ajout...</span>
+            <span *ngIf="cartAdded">✓ Ajouté au panier !</span>
+          </button>
+          <button class="btn-favori" [class.active]="isFavori" (click)="toggleFavori()">
+            {{ isFavori ? '♥' : '♡' }}
+          </button>
+        </div>
+
+        <!-- Extra info -->
+        <div class="product-extras" *ngIf="produit.reference_sku || produit.poids || produit.tags?.length">
+          <div class="extra-item" *ngIf="produit.reference_sku">
+            <span class="extra-label">SKU</span>
+            <span class="extra-value">{{ produit.reference_sku }}</span>
+          </div>
+          <div class="extra-item" *ngIf="produit.poids">
+            <span class="extra-label">Poids</span>
+            <span class="extra-value">{{ produit.poids }} kg</span>
+          </div>
+          <div class="extra-item" *ngIf="produit.tags?.length">
+            <span class="extra-label">Tags</span>
+            <span class="extra-tags">
+              <span class="tag" *ngFor="let t of produit.tags">{{ t }}</span>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Description -->
+  <section class="container detail-section" *ngIf="produit.description_longue">
+    <div class="section-card">
+      <h2 class="section-title">📝 Description détaillée</h2>
+      <p class="long-desc">{{ produit.description_longue }}</p>
+    </div>
+  </section>
+
+  <!-- Avis -->
+  <section class="container detail-section">
+    <div class="section-card">
+      <div class="section-header">
+        <h2 class="section-title">⭐ Avis clients</h2>
+        <span class="avis-count" *ngIf="avis.length > 0">{{ avis.length }} avis</span>
+      </div>
+
+      <!-- Rating summary -->
+      <div class="rating-summary" *ngIf="averageRating > 0">
+        <div class="rs-big">
+          <span class="rs-number">{{ averageRating | number:'1.1-1' }}</span>
+          <div class="rs-stars">
+            <span *ngFor="let s of getStarsArray(averageRating)" class="star" [class.filled]="s === 1">★</span>
+          </div>
+          <span class="rs-label">{{ avis.length }} avis</span>
+        </div>
+      </div>
+
+      <!-- Formulaire avis -->
+      <div class="avis-form" *ngIf="isLoggedIn">
+        <h4>Laisser un avis</h4>
+        <div class="note-picker">
+          <button *ngFor="let n of [1,2,3,4,5]" class="note-star" [class.selected]="n <= newAvis.note" (click)="newAvis.note = n">★</button>
+          <span class="note-text">{{ newAvis.note }}/5</span>
+        </div>
+        <textarea class="avis-textarea" rows="3" placeholder="Partagez votre expérience..." [(ngModel)]="newAvis.commentaire"></textarea>
+        <button class="btn-submit-avis" (click)="submitAvis()" [disabled]="submittingAvis || !newAvis.commentaire.trim()">
+          {{ submittingAvis ? 'Envoi...' : 'Publier mon avis' }}
+        </button>
+      </div>
+
+      <div class="login-prompt" *ngIf="!isLoggedIn">
+        <a routerLink="/login">Connectez-vous</a> pour laisser un avis.
+      </div>
+
+      <!-- Liste avis -->
+      <div class="avis-list">
+        <div class="avis-item" *ngFor="let a of avis">
+          <div class="avis-header">
+            <div class="avis-left">
+              <div class="avis-avatar">{{ (a.client_id?.nom || 'A')[0] | uppercase }}</div>
+              <div>
+                <span class="avis-author">{{ a.client_id?.nom || 'Anonyme' }}</span>
+                <span class="avis-date">{{ getRelativeDate(a.date_creation) }}</span>
+              </div>
+            </div>
+            <div class="avis-stars-inline">
+              <span *ngFor="let s of getStarsArray(a.note)" class="star sm" [class.filled]="s === 1">★</span>
+            </div>
+          </div>
+          <p class="avis-text">{{ a.commentaire }}</p>
+          <div class="avis-reply" *ngIf="a.reponse_boutique">
+            <div class="reply-badge">🏪 Réponse de la boutique</div>
+            <p>{{ a.reponse_boutique }}</p>
+          </div>
+        </div>
+
+        <div class="empty-avis" *ngIf="avis.length === 0">
+          <span class="ea-icon">💬</span>
+          <p>Aucun avis pour le moment. Soyez le premier à partager votre expérience !</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+

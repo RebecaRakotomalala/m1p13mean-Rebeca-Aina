@@ -1,0 +1,251 @@
+<!-- Loading -->
+<div class="loading-screen" *ngIf="loading">
+  <div class="spinner-border text-primary" role="status"></div>
+</div>
+
+<!-- Not found -->
+<div class="not-found" *ngIf="!boutique && !loading">
+  <div class="container text-center py-5">
+    <div class="nf-icon">🏪</div>
+    <h3>Boutique non trouvée</h3>
+    <p class="text-muted">Cette boutique n'existe pas ou a été fermée.</p>
+    <a routerLink="/boutiques" class="btn-back">← Retour aux boutiques</a>
+  </div>
+</div>
+
+<!-- Main content -->
+<div *ngIf="boutique && !loading">
+
+  <!-- Hero Banner -->
+  <section class="boutique-hero" [style.background]="boutique.banniere_url ? 'url(' + boutique.banniere_url + ') center/cover' : getGradient(boutique.nom)">
+    <div class="hero-overlay"></div>
+    <div class="container">
+      <div class="hero-inner">
+        <!-- Back button -->
+        <a routerLink="/boutiques" class="back-link">
+          ← Toutes les boutiques
+        </a>
+
+        <div class="hero-profile">
+          <!-- Avatar -->
+          <div class="profile-avatar" *ngIf="!boutique.logo_url" [style.background]="getGradient(boutique.nom)">
+            {{ getInitials(boutique.nom) }}
+          </div>
+          <img class="profile-avatar profile-avatar-img" *ngIf="boutique.logo_url" [src]="boutique.logo_url" [alt]="boutique.nom" />
+
+          <!-- Info -->
+          <div class="profile-info">
+            <h1 class="profile-name">{{ boutique.nom }}</h1>
+            <div class="profile-badges">
+              <span class="badge-cat">{{ boutique.categorie_principale }}</span>
+              <span class="badge-status" *ngIf="boutique.statut === 'active'">🟢 Ouverte</span>
+              <span class="badge-plan" *ngIf="boutique.plan && boutique.plan !== 'basique'">{{ boutique.plan | titlecase }}</span>
+            </div>
+            <p class="profile-desc" *ngIf="boutique.description_courte">{{ boutique.description_courte }}</p>
+          </div>
+        </div>
+
+        <!-- Stats bar -->
+        <div class="hero-stats">
+          <div class="hero-stat">
+            <div class="hero-stat-value">{{ produits.length }}</div>
+            <div class="hero-stat-label">Produits</div>
+          </div>
+          <div class="hero-stat" *ngIf="boutique.note_moyenne > 0">
+            <div class="hero-stat-value">{{ boutique.note_moyenne | number:'1.1-1' }}<span class="star-icon">★</span></div>
+            <div class="hero-stat-label">Note moyenne</div>
+          </div>
+          <div class="hero-stat" *ngIf="boutique.nombre_avis > 0">
+            <div class="hero-stat-value">{{ boutique.nombre_avis }}</div>
+            <div class="hero-stat-label">Avis</div>
+          </div>
+          <div class="hero-stat" *ngIf="boutique.nombre_vues > 0">
+            <div class="hero-stat-value">{{ boutique.nombre_vues }}</div>
+            <div class="hero-stat-label">Vues</div>
+          </div>
+          <div class="hero-stat" *ngIf="categories.length > 0">
+            <div class="hero-stat-value">{{ categories.length }}</div>
+            <div class="hero-stat-label">Catégories</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Contact & Info -->
+  <section class="info-section" *ngIf="boutique.description_longue || boutique.email_contact || boutique.telephone_contact || (boutique.services && boutique.services.length > 0)">
+    <div class="container">
+      <div class="info-cards">
+        <!-- Description longue -->
+        <div class="info-card" *ngIf="boutique.description_longue">
+          <h3 class="info-card-title">📖 À propos</h3>
+          <p class="info-card-text">{{ boutique.description_longue }}</p>
+        </div>
+
+        <!-- Contact -->
+        <div class="info-card" *ngIf="boutique.email_contact || boutique.telephone_contact">
+          <h3 class="info-card-title">📞 Contact</h3>
+          <div class="contact-list">
+            <div class="contact-item" *ngIf="boutique.email_contact">
+              <span class="contact-icon">✉️</span>
+              <a [href]="'mailto:' + boutique.email_contact">{{ boutique.email_contact }}</a>
+            </div>
+            <div class="contact-item" *ngIf="boutique.telephone_contact">
+              <span class="contact-icon">📱</span>
+              <a [href]="'tel:' + boutique.telephone_contact">{{ boutique.telephone_contact }}</a>
+            </div>
+          </div>
+          <!-- Réseaux sociaux -->
+          <div class="social-links" *ngIf="boutique.facebook_url || boutique.instagram_url || boutique.tiktok_url">
+            <a *ngIf="boutique.facebook_url" [href]="boutique.facebook_url" target="_blank" class="social-link fb" title="Facebook">f</a>
+            <a *ngIf="boutique.instagram_url" [href]="boutique.instagram_url" target="_blank" class="social-link ig" title="Instagram">📸</a>
+            <a *ngIf="boutique.tiktok_url" [href]="boutique.tiktok_url" target="_blank" class="social-link tk" title="TikTok">🎵</a>
+          </div>
+        </div>
+
+        <!-- Services -->
+        <div class="info-card" *ngIf="boutique.services && boutique.services.length > 0">
+          <h3 class="info-card-title">✨ Services</h3>
+          <div class="services-list">
+            <span class="service-tag" *ngFor="let s of boutique.services">{{ s }}</span>
+          </div>
+        </div>
+
+        <!-- Localisation -->
+        <div class="info-card" *ngIf="boutique.numero_emplacement || boutique.etage || boutique.zone">
+          <h3 class="info-card-title">📍 Localisation</h3>
+          <div class="location-details">
+            <span *ngIf="boutique.zone">Zone : <strong>{{ boutique.zone }}</strong></span>
+            <span *ngIf="boutique.etage">Étage : <strong>{{ boutique.etage }}</strong></span>
+            <span *ngIf="boutique.numero_emplacement">N° : <strong>{{ boutique.numero_emplacement }}</strong></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Products Section -->
+  <section class="products-section">
+    <div class="container">
+      <div class="section-header">
+        <h2 class="section-title">🛍️ Produits <span class="product-count">({{ filteredProduits.length }})</span></h2>
+      </div>
+
+      <!-- Filters -->
+      <div class="products-toolbar" *ngIf="produits.length > 0">
+        <div class="toolbar-left">
+          <!-- Search -->
+          <div class="product-search">
+            <svg class="ps-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" placeholder="Rechercher un produit..." [(ngModel)]="search" (input)="applyFilters()" />
+          </div>
+
+          <!-- Categories -->
+          <div class="cat-chips" *ngIf="categories.length > 1">
+            <button class="cat-chip" [class.active]="selectedCategorie === ''" (click)="selectedCategorie = ''; applyFilters()">Tous</button>
+            <button *ngFor="let cat of categories" class="cat-chip" [class.active]="selectedCategorie === cat" (click)="selectedCategorie = cat; applyFilters()">{{ cat }}</button>
+          </div>
+        </div>
+
+        <div class="toolbar-right">
+          <select class="sort-select" [(ngModel)]="sortBy" (change)="applyFilters()">
+            <option value="nom">A → Z</option>
+            <option value="prix_asc">Prix ↑</option>
+            <option value="prix_desc">Prix ↓</option>
+            <option value="populaire">Populaire</option>
+          </select>
+          <div class="view-toggle">
+            <button class="view-btn" [class.active]="viewMode === 'grid'" (click)="viewMode = 'grid'">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+            </button>
+            <button class="view-btn" [class.active]="viewMode === 'list'" (click)="viewMode = 'list'">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="4" width="18" height="4" rx="1.5"/><rect x="3" y="10" width="18" height="4" rx="1.5"/><rect x="3" y="16" width="18" height="4" rx="1.5"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Products Loading -->
+      <div class="products-loading" *ngIf="produitsLoading">
+        <div class="row">
+          <div class="col-6 col-md-4 col-lg-3 mb-4" *ngFor="let i of [1,2,3,4,5,6,7,8]">
+            <div class="skeleton-product">
+              <div class="skeleton-img"></div>
+              <div class="skeleton-line w70"></div>
+              <div class="skeleton-line w40"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Empty -->
+      <div class="products-empty" *ngIf="!produitsLoading && filteredProduits.length === 0">
+        <div class="empty-icon">📦</div>
+        <h4 *ngIf="produits.length === 0">Cette boutique n'a pas encore de produits</h4>
+        <h4 *ngIf="produits.length > 0">Aucun produit ne correspond</h4>
+        <p class="text-muted" *ngIf="produits.length > 0">Essayez avec d'autres termes de recherche.</p>
+        <button class="btn-clear-filters" *ngIf="search || selectedCategorie" (click)="clearFilters()">Réinitialiser</button>
+      </div>
+
+      <!-- Products Grid -->
+      <div class="products-grid" *ngIf="!produitsLoading && viewMode === 'grid' && filteredProduits.length > 0">
+        <div class="product-card" *ngFor="let p of filteredProduits; let i = index" [routerLink]="['/catalogue/produit', p._id]" [style.animation-delay]="(i * 0.04) + 's'">
+          <!-- Image -->
+          <div class="product-img-wrap">
+            <img
+              [src]="p.image_principale || 'assets/images/authentication/img-placeholder.svg'"
+              [alt]="p.nom"
+              class="product-img"
+            />
+            <span class="discount-badge" *ngIf="getDiscount(p) > 0">-{{ getDiscount(p) }}%</span>
+            <span class="stock-badge out" *ngIf="!p.stock_illimite && p.stock_quantite === 0">Rupture</span>
+          </div>
+
+          <!-- Content -->
+          <div class="product-info">
+            <span class="product-cat">{{ p.categorie }}</span>
+            <h4 class="product-name">{{ p.nom }}</h4>
+            <div class="product-pricing">
+              <span class="product-price">{{ (p.prix_promo || p.prix_initial) | number:'1.0-0' }} Ar</span>
+              <span class="product-old-price" *ngIf="p.prix_promo && p.prix_promo < p.prix_initial">{{ p.prix_initial | number:'1.0-0' }} Ar</span>
+            </div>
+            <div class="product-meta">
+              <span class="product-rating" *ngIf="p.note_moyenne > 0">
+                <span class="star-sm filled">★</span> {{ p.note_moyenne | number:'1.1-1' }}
+              </span>
+              <span class="product-sales" *ngIf="p.nombre_ventes > 0">
+                {{ p.nombre_ventes }} vendu{{ p.nombre_ventes > 1 ? 's' : '' }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Products List -->
+      <div class="products-list-view" *ngIf="!produitsLoading && viewMode === 'list' && filteredProduits.length > 0">
+        <div class="product-list-item" *ngFor="let p of filteredProduits; let i = index" [routerLink]="['/catalogue/produit', p._id]" [style.animation-delay]="(i * 0.03) + 's'">
+          <img
+            class="pli-img"
+            [src]="p.image_principale || 'assets/images/authentication/img-placeholder.svg'"
+            [alt]="p.nom"
+          />
+          <div class="pli-info">
+            <span class="product-cat">{{ p.categorie }}</span>
+            <h4 class="product-name">{{ p.nom }}</h4>
+            <div class="product-meta">
+              <span class="product-rating" *ngIf="p.note_moyenne > 0"><span class="star-sm filled">★</span> {{ p.note_moyenne | number:'1.1-1' }}</span>
+              <span class="product-sales" *ngIf="p.nombre_ventes > 0">{{ p.nombre_ventes }} ventes</span>
+              <span class="stock-text out" *ngIf="!p.stock_illimite && p.stock_quantite === 0">Rupture de stock</span>
+            </div>
+          </div>
+          <div class="pli-price">
+            <span class="product-price">{{ (p.prix_promo || p.prix_initial) | number:'1.0-0' }} Ar</span>
+            <span class="product-old-price" *ngIf="p.prix_promo && p.prix_promo < p.prix_initial">{{ p.prix_initial | number:'1.0-0' }} Ar</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+</div>
+
