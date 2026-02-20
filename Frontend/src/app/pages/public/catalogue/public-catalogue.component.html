@@ -117,6 +117,11 @@
           <span class="badge-discount" *ngIf="getDiscount(p) > 0">-{{ getDiscount(p) }}%</span>
           <span class="badge-new" *ngIf="p.nouveau">Nouveau</span>
           <span class="badge-stock-out" *ngIf="!p.stock_illimite && p.stock_quantite === 0">Rupture</span>
+          <!-- Favorite button -->
+          <button class="btn-fav" [class.is-fav]="isFavori(p._id)" [class.animating]="favAnimation[p._id]" (click)="toggleFavori(p._id, $event)" title="Ajouter aux favoris">
+            <svg *ngIf="!isFavori(p._id)" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            <svg *ngIf="isFavori(p._id)" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          </button>
         </div>
 
         <!-- Content -->
@@ -185,10 +190,16 @@
             <span class="card-price">{{ (p.prix_promo || p.prix_initial) | number:'1.0-0' }} Ar</span>
             <span class="card-old-price" *ngIf="p.prix_promo && p.prix_promo < p.prix_initial">{{ p.prix_initial | number:'1.0-0' }} Ar</span>
           </div>
-          <button class="btn-add-cart-sm" [class.added]="cartAnimation[p._id]" [disabled]="!p.stock_illimite && p.stock_quantite === 0" (click)="addToCart(p._id, $event)">
-            <span *ngIf="!cartAnimation[p._id]">🛒</span>
-            <span *ngIf="cartAnimation[p._id]">✓</span>
-          </button>
+          <div class="pli-actions">
+            <button class="btn-fav-sm" [class.is-fav]="isFavori(p._id)" [class.animating]="favAnimation[p._id]" (click)="toggleFavori(p._id, $event)" title="Ajouter aux favoris">
+              <svg *ngIf="!isFavori(p._id)" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+              <svg *ngIf="isFavori(p._id)" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            </button>
+            <button class="btn-add-cart-sm" [class.added]="cartAnimation[p._id]" [disabled]="!p.stock_illimite && p.stock_quantite === 0" (click)="addToCart(p._id, $event)">
+              <span *ngIf="!cartAnimation[p._id]">🛒</span>
+              <span *ngIf="cartAnimation[p._id]">✓</span>
+            </button>
+          </div>
         </div>
       </a>
     </div>

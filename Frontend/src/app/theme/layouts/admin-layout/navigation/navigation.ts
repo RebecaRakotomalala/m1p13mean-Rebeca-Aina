@@ -137,8 +137,24 @@ export const BoutiqueNavigationItems: NavigationItem[] = [
 // Navigation pour CLIENT
 export const ClientNavigationItems: NavigationItem[] = [
   {
+    id: 'client-home-group',
+    title: '',
+    type: 'group',
+    icon: 'icon-navigation',
+    children: [
+      {
+        id: 'client-home',
+        title: 'Accueil',
+        type: 'item',
+        classes: 'nav-item',
+        url: '/',
+        icon: 'home'
+      }
+    ]
+  },
+  {
     id: 'client-group',
-    title: 'MallConnect',
+    title: 'Mon Espace',
     type: 'group',
     icon: 'icon-navigation',
     children: [
@@ -147,9 +163,8 @@ export const ClientNavigationItems: NavigationItem[] = [
         title: 'Catalogue',
         type: 'item',
         classes: 'nav-item',
-        url: '/client/catalogue',
-        icon: 'appstore',
-        breadcrumbs: false
+        url: '/catalogue',
+        icon: 'appstore'
       },
       {
         id: 'client-panier',

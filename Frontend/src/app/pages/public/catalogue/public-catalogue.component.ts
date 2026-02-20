@@ -34,10 +34,13 @@ export class PublicCatalogueComponent implements OnInit {
   categories: string[] = [];
   showFilters = false;
   cartAnimation: { [key: string]: boolean } = {};
+  favAnimation: { [key: string]: boolean } = {};
+  favorisIds: Set<string> = new Set();
 
   ngOnInit(): void {
     this.loadCategories();
     this.loadProduits();
+    this.loadFavoris();
   }
 
   loadCategories(): void {
@@ -75,6 +78,47 @@ export class PublicCatalogueComponent implements OnInit {
       },
       error: () => {
         this.loading = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  loadFavoris(): void {
+    if (!this.auth.isLoggedIn) return;
+    this.api.getMyFavoris('produit').subscribe({
+      next: (res) => {
+        if (res.success && res.favoris) {
+          this.favorisIds = new Set(res.favoris.map((f: any) => f.produit_id?._id || f.produit_id).filter(Boolean));
+        }
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  isFavori(produitId: string): boolean {
+    return this.favorisIds.has(produitId);
+  }
+
+  toggleFavori(produitId: string, event: Event): void {
+    event.stopPropagation();
+    event.preventDefault();
+    if (!this.auth.isLoggedIn) {
+      this.router.navigate(['/login']);
+      return;
+    }
+    this.favAnimation[produitId] = true;
+    this.api.toggleFavori('produit', produitId).subscribe({
+      next: (res) => {
+        if (this.favorisIds.has(produitId)) {
+          this.favorisIds.delete(produitId);
+        } else {
+          this.favorisIds.add(produitId);
+        }
+        setTimeout(() => { this.favAnimation[produitId] = false; this.cdr.detectChanges(); }, 600);
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.favAnimation[produitId] = false;
         this.cdr.detectChanges();
       }
     });
