@@ -1,0 +1,222 @@
+<!-- Breadcrumb -->
+<div class="cart-breadcrumb">
+  <div class="breadcrumb-inner">
+    <a routerLink="/" class="breadcrumb-link">
+      <i class="bi bi-house"></i> Accueil
+    </a>
+    <span class="breadcrumb-sep">›</span>
+    <span class="breadcrumb-current">Mon Panier</span>
+  </div>
+</div>
+
+<!-- Loading State -->
+<div *ngIf="loadingCart" class="cart-loading">
+  <div class="loading-spinner">
+    <div class="spinner"></div>
+    <p>Chargement de votre panier...</p>
+  </div>
+</div>
+
+<!-- Order Success -->
+<div *ngIf="orderSuccess" class="order-success-container">
+  <div class="success-card">
+    <div class="success-icon">
+      <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
+        <circle cx="40" cy="40" r="40" fill="#e8f5e9"/>
+        <circle cx="40" cy="40" r="30" fill="#4caf50"/>
+        <path d="M28 40l8 8 16-16" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <h2>Commande confirmée ! 🎉</h2>
+    <p class="success-number">N° {{ orderNumber }}</p>
+    <p class="success-text">Votre commande a été créée avec succès. Vous pouvez suivre son avancement dans vos commandes.</p>
+    <div class="success-actions">
+      <button class="btn-primary-custom" (click)="goToCommandes()">Voir mes commandes</button>
+      <button class="btn-outline-custom" (click)="continueShopping()">Continuer mes achats</button>
+    </div>
+  </div>
+</div>
+
+<!-- Cart Content -->
+<div *ngIf="!loadingCart && !orderSuccess" class="cart-container">
+  <!-- Cart Header -->
+  <div class="cart-header">
+    <h1 class="cart-title">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+      </svg>
+      Mon Panier
+    </h1>
+    <span class="cart-count" *ngIf="panier && panier.items.length > 0">{{ panier.nombre_items }} article{{ panier.nombre_items > 1 ? 's' : '' }}</span>
+  </div>
+
+  <!-- Empty Cart -->
+  <div *ngIf="!panier || panier.items.length === 0" class="empty-cart">
+    <div class="empty-icon">
+      <svg width="120" height="120" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1">
+        <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+      </svg>
+    </div>
+    <h3>Votre panier est vide</h3>
+    <p>Découvrez nos produits et ajoutez vos coups de cœur !</p>
+    <button class="btn-primary-custom" (click)="continueShopping()">
+      Explorer le catalogue
+    </button>
+  </div>
+
+  <!-- Cart Items + Summary -->
+  <div class="cart-layout" *ngIf="panier && panier.items.length > 0">
+    <!-- Items List -->
+    <div class="cart-items">
+      <div *ngFor="let item of panier.items; let i = index"
+           class="cart-item"
+           [class.updating]="isUpdating(item._id)"
+           [style.animation-delay]="(i * 0.05) + 's'">
+
+        <!-- Product Image -->
+        <div class="item-image">
+          <img [src]="item.produit?.image_principale || 'assets/images/authentication/img-placeholder.svg'"
+               [alt]="item.produit?.nom" />
+        </div>
+
+        <!-- Product Info -->
+        <div class="item-details">
+          <div class="item-top">
+            <div>
+              <h4 class="item-name">{{ item.produit?.nom }}</h4>
+              <p class="item-boutique" *ngIf="item.produit?.boutique_id?.nom">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                  <polyline points="9 22 9 12 15 12 15 22"/>
+                </svg>
+                {{ item.produit?.boutique_id?.nom }}
+              </p>
+            </div>
+            <button class="btn-remove" (click)="removeItem(item._id)" title="Retirer du panier">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="3 6 5 6 21 6"/>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+              </svg>
+            </button>
+          </div>
+
+          <div class="item-bottom">
+            <div class="item-price">{{ item.prix_unitaire | number:'1.0-0' }} Ar</div>
+
+            <!-- Quantity Controls -->
+            <div class="qty-controls">
+              <button class="qty-btn" (click)="updateQty(item._id, item.quantite - 1)" [disabled]="item.quantite <= 1">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              </button>
+              <span class="qty-value">{{ item.quantite }}</span>
+              <button class="qty-btn qty-plus" (click)="updateQty(item._id, item.quantite + 1)">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              </button>
+            </div>
+
+            <div class="item-subtotal">{{ item.sous_total | number:'1.0-0' }} Ar</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Continue Shopping Link -->
+      <div class="continue-shopping">
+        <a routerLink="/catalogue" class="continue-link">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
+          </svg>
+          Continuer mes achats
+        </a>
+      </div>
+    </div>
+
+    <!-- Order Summary -->
+    <div class="cart-summary">
+      <div class="summary-card">
+        <h3 class="summary-title">Récapitulatif</h3>
+
+        <div class="summary-row">
+          <span>Sous-total ({{ panier.nombre_items }} articles)</span>
+          <strong>{{ panier.total | number:'1.0-0' }} Ar</strong>
+        </div>
+
+        <div class="summary-row">
+          <span>Livraison</span>
+          <strong [class.text-success]="fraisLivraison === 0">
+            {{ fraisLivraison === 0 ? 'Gratuit' : (fraisLivraison | number:'1.0-0') + ' Ar' }}
+          </strong>
+        </div>
+
+        <div class="summary-divider"></div>
+
+        <div class="summary-row summary-total">
+          <span>Total</span>
+          <strong>{{ totalFinal | number:'1.0-0' }} Ar</strong>
+        </div>
+
+        <!-- Delivery Mode -->
+        <div class="delivery-section">
+          <label class="delivery-label">Mode de livraison</label>
+          <div class="delivery-options">
+            <label class="delivery-option" [class.active]="modeLivraison === 'retrait_boutique'">
+              <input type="radio" name="livraison" value="retrait_boutique" [(ngModel)]="modeLivraison" />
+              <div class="option-content">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                </svg>
+                <div>
+                  <strong>Retrait en boutique</strong>
+                  <small>Gratuit</small>
+                </div>
+              </div>
+            </label>
+            <label class="delivery-option" [class.active]="modeLivraison === 'livraison_domicile'">
+              <input type="radio" name="livraison" value="livraison_domicile" [(ngModel)]="modeLivraison" />
+              <div class="option-content">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/>
+                  <circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
+                </svg>
+                <div>
+                  <strong>Livraison à domicile</strong>
+                  <small>5 000 Ar</small>
+                </div>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- Address -->
+        <div class="address-section" *ngIf="modeLivraison === 'livraison_domicile'">
+          <label class="delivery-label">Adresse de livraison</label>
+          <textarea class="address-input" rows="3" [(ngModel)]="adresse" placeholder="Entrez votre adresse complète..."></textarea>
+        </div>
+
+        <!-- Order Button -->
+        <button class="btn-order" (click)="commander()" [disabled]="loading">
+          <span *ngIf="!loading">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/>
+            </svg>
+            Passer la commande
+          </span>
+          <span *ngIf="loading" class="loading-text">
+            <div class="btn-spinner"></div>
+            Commande en cours...
+          </span>
+        </button>
+
+        <!-- Security Badge -->
+        <div class="security-badge">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+          Paiement 100% sécurisé
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+

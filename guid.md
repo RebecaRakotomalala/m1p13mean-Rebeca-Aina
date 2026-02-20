@@ -34,7 +34,7 @@ sudo systemctl status mongod
 mongosh --eval "db.version()"
 
 
-Equivalent a select * db.utilisateurs.find().pretty()
+Equivalent a select * db.boutique.find().pretty()
 db.boutiques.findOne({ nom: "Fanelie Boutique" })
 
 node scripts/insert-gael-boutique.js (insert directe base)
