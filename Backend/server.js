@@ -51,7 +51,8 @@ app.get('/', (req, res) => {
       commandes: '/api/commandes',
       avis: '/api/avis',
       favoris: '/api/favoris',
-      admin: '/api/admin'
+      admin: '/api/admin',
+      evenements: '/api/evenements'
     }
   });
 });
@@ -67,6 +68,7 @@ const commandeRoutes = require('./routes/commande.routes');
 const avisRoutes = require('./routes/avis.routes');
 const favoriRoutes = require('./routes/favori.routes');
 const adminRoutes = require('./routes/admin.routes');
+const evenementRoutes = require('./routes/evenement.routes');
 
 app.use('/api/test', testRoutes);
 app.use('/api/auth', authRoutes);
@@ -78,6 +80,7 @@ app.use('/api/commandes', commandeRoutes);
 app.use('/api/avis', avisRoutes);
 app.use('/api/favoris', favoriRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/evenements', evenementRoutes);
 
 // GESTION ERREURS
 app.use((req, res) => {

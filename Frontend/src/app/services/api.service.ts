@@ -153,11 +153,65 @@ export class ApiService {
     return this.http.put(`${this.baseUrl}/admin/boutiques/${id}/valider`, {});
   }
 
+  rejeterBoutique(id: string): Observable<any> {
+    return this.http.put(`${this.baseUrl}/admin/boutiques/${id}/rejeter`, {});
+  }
+
   suspendreBoutique(id: string): Observable<any> {
     return this.http.put(`${this.baseUrl}/admin/boutiques/${id}/suspendre`, {});
   }
 
+  getBoutiqueDetail(id: string): Observable<any> {
+    return this.http.get(`${this.baseUrl}/admin/boutiques/${id}/detail`);
+  }
+
+  updateEmplacementBoutique(id: string, data: any): Observable<any> {
+    return this.http.put(`${this.baseUrl}/admin/boutiques/${id}/emplacement`, data);
+  }
+
   getBoutiqueStats(): Observable<any> {
     return this.http.get(`${this.baseUrl}/admin/boutique-stats`);
+  }
+
+  // Admin - Moderation avis
+  getAdminAvis(params?: any): Observable<any> {
+    return this.http.get(`${this.baseUrl}/admin/avis`, { params });
+  }
+
+  modererAvis(id: string, approuve: boolean, raison_moderation?: string): Observable<any> {
+    return this.http.put(`${this.baseUrl}/admin/avis/${id}/moderer`, { approuve, raison_moderation });
+  }
+
+  supprimerAvis(id: string): Observable<any> {
+    return this.http.delete(`${this.baseUrl}/admin/avis/${id}`);
+  }
+
+  // === EVENEMENTS ===
+  getEvenements(params?: any): Observable<any> {
+    return this.http.get(`${this.baseUrl}/evenements`, { params });
+  }
+
+  getEvenementById(id: string): Observable<any> {
+    return this.http.get(`${this.baseUrl}/evenements/${id}`);
+  }
+
+  createEvenement(data: any): Observable<any> {
+    return this.http.post(`${this.baseUrl}/evenements`, data);
+  }
+
+  updateEvenement(id: string, data: any): Observable<any> {
+    return this.http.put(`${this.baseUrl}/evenements/${id}`, data);
+  }
+
+  deleteEvenement(id: string): Observable<any> {
+    return this.http.delete(`${this.baseUrl}/evenements/${id}`);
+  }
+
+  updateStatutEvenement(id: string, statut: string): Observable<any> {
+    return this.http.put(`${this.baseUrl}/evenements/${id}/statut`, { statut });
+  }
+
+  getBoutiquesActives(): Observable<any> {
+    return this.http.get(`${this.baseUrl}/evenements/boutiques-actives`);
   }
 }

@@ -45,12 +45,36 @@ export const AdminNavigationItems: NavigationItem[] = [
         icon: 'shop'
       },
       {
+        id: 'admin-commandes',
+        title: 'Commandes',
+        type: 'item',
+        classes: 'nav-item',
+        url: '/admin/commandes',
+        icon: 'shopping-cart'
+      },
+      {
+        id: 'admin-evenements',
+        title: 'Evenements',
+        type: 'item',
+        classes: 'nav-item',
+        url: '/admin/evenements',
+        icon: 'calendar'
+      },
+      {
         id: 'admin-users',
         title: 'Utilisateurs',
         type: 'item',
         classes: 'nav-item',
         url: '/admin/users',
         icon: 'team'
+      },
+      {
+        id: 'admin-avis',
+        title: 'Moderation Avis',
+        type: 'item',
+        classes: 'nav-item',
+        url: '/admin/avis',
+        icon: 'file-done'
       }
     ]
   }

@@ -65,8 +65,20 @@ const routes: Routes = [
         loadComponent: () => import('./pages/admin/boutiques/admin-boutiques.component').then(c => c.AdminBoutiquesComponent)
       },
       {
+        path: 'commandes',
+        loadComponent: () => import('./pages/admin/commandes/admin-commandes.component').then(c => c.AdminCommandesComponent)
+      },
+      {
+        path: 'evenements',
+        loadComponent: () => import('./pages/admin/evenements/admin-evenements.component').then(c => c.AdminEvenementsComponent)
+      },
+      {
         path: 'users',
         loadComponent: () => import('./pages/admin/users/admin-users.component').then(c => c.AdminUsersComponent)
+      },
+      {
+        path: 'avis',
+        loadComponent: () => import('./pages/admin/avis/admin-avis.component').then(c => c.AdminAvisComponent)
       }
     ]
   },
