@@ -18,7 +18,7 @@ PORT=3000
 
 # URI de connexion MongoDB
 # Pour MongoDB local:
-MONGODB_URI=mongodb://localhost:27017/test
+MONGODB_URI=mongodb://localhost:27017/mall
 
 # Pour MongoDB Atlas (remplacez par vos identifiants):
 # MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/nom-de-votre-base?retryWrites=true&w=majority
@@ -52,7 +52,7 @@ Une fois le serveur démarré, vous pouvez tester les routes suivantes:
 Le serveur devrait afficher:
 ```
 ✅ Connexion à MongoDB réussie!
-📊 Base de données: test
+📊 Base de données: mall
 🚀 Serveur backend démarré sur le port 3000
 ```
 

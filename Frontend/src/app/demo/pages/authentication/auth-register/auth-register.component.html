@@ -1,0 +1,66 @@
+<div class="auth-main">
+  <div class="auth-wrapper v3">
+    <div class="auth-form">
+      <div class="auth-header">
+        <a routerLink="/"><img src="assets/images/logo-dark.svg" alt="logo" /></a>
+      </div>
+      <div class="card my-5">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-end mb-4">
+            <h3 class="mb-0"><b>Inscription</b></h3>
+            <a [routerLink]="['/login']" class="link-primary">Deja un compte ?</a>
+          </div>
+          @if (errorMessage) {
+            <div class="alert alert-danger" role="alert">{{ errorMessage }}</div>
+          }
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group mb-3">
+                <label class="form-label" for="nom">Nom *</label>
+                <input type="text" class="form-control" id="nom" placeholder="Votre nom" [(ngModel)]="nom" />
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group mb-3">
+                <label class="form-label" for="prenom">Prenom</label>
+                <input type="text" class="form-control" id="prenom" placeholder="Votre prenom" [(ngModel)]="prenom" />
+              </div>
+            </div>
+          </div>
+          <div class="form-group mb-3">
+            <label class="form-label" for="email">Email *</label>
+            <input type="email" class="form-control" id="email" placeholder="votre&#64;email.com" [(ngModel)]="email" />
+          </div>
+          <div class="form-group mb-3">
+            <label class="form-label" for="telephone">Telephone</label>
+            <input type="text" class="form-control" id="telephone" placeholder="+261 34 00 000 00" [(ngModel)]="telephone" />
+          </div>
+          <div class="form-group mb-3">
+            <label class="form-label" for="password">Mot de passe *</label>
+            <input type="password" class="form-control" id="password" placeholder="Minimum 6 caracteres" [(ngModel)]="password" />
+          </div>
+          <div class="form-group mb-3">
+            <label class="form-label">Type de compte</label>
+            <select class="form-select" [(ngModel)]="role">
+              <option value="client">Acheteur (Client)</option>
+              <option value="boutique">Boutique (Vendeur)</option>
+            </select>
+          </div>
+          <div class="d-grid mt-4">
+            <button type="button" class="btn btn-primary" (click)="onRegister()" [disabled]="loading">
+              {{ loading ? 'Inscription en cours...' : 'Creer mon compte' }}
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="text-center mt-3">
+        <a routerLink="/" class="text-muted">← Retour a l'accueil</a>
+      </div>
+      <div class="auth-footer row">
+        <div class="col my-1">
+          <p class="m-0">MallConnect &copy; 2026</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,26 @@
+<ul class="list-unstyled">
+  <li class="dropdown pc-h-item header-user-profile" ngbDropdown>
+    <a href="javascript:" class="pc-head-link dropdown-toggle arrow-none me-0" ngbDropdownToggle>
+      <img src="assets/images/user/avatar-2.jpg" alt="user-image" class="user-avatar me-2" />
+      <span class="f-w-600">{{ userName }}</span>
+    </a>
+    <div class="dropdown-menu dropdown-user-profile dropdown-menu-end pc-h-dropdown" ngbDropdownMenu>
+      <div class="dropdown-header">
+        <div class="d-flex mb-1">
+          <div class="flex-shrink-0">
+            <img src="assets/images/user/avatar-2.jpg" alt="user-image" class="user-avatar wid-35" />
+          </div>
+          <div class="flex-grow-1 ms-3 text-start">
+            <h6 class="mb-0">{{ userName }}</h6>
+            <span class="badge bg-primary">{{ userRole }}</span>
+          </div>
+        </div>
+      </div>
+      <div class="dropdown-divider"></div>
+      <a href="javascript:" class="dropdown-item" (click)="logout()">
+        <i class="text-muted me-2" antIcon theme="outline" type="logout"></i>
+        <span>Deconnexion</span>
+      </a>
+    </div>
+  </li>
+</ul>

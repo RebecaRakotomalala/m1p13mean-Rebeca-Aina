@@ -6,288 +6,113 @@ const bodyParser = require('body-parser');
 
 const app = express();
 
-// Middleware
+// MIDDLEWARES
 app.use(cors());
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json({ limit: '10mb' }));
+app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }));
 
-// Variables d'environnement
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+  next();
+});
+
+// CONFIGURATION
 const PORT = process.env.PORT || 3000;
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/test';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/mall';
 
-// Connexion à MongoDB avec gestion d'erreur non-bloquante
+// CONNEXION MONGODB
 mongoose.connect(MONGODB_URI, {
-  serverSelectionTimeoutMS: 5000, // Timeout après 5 secondes
+  serverSelectionTimeoutMS: 5000,
   retryWrites: true
 })
   .then(() => {
-    console.log('✅ Connexion à MongoDB réussie!');
-    console.log(`📊 Base de données: ${mongoose.connection.name}`);
+    console.log('Connexion MongoDB reussie!');
+    console.log('Base de donnees:', mongoose.connection.name);
   })
   .catch((error) => {
-    console.error('⚠️  Erreur de connexion à MongoDB:', error.message);
-    console.error('💡 Le serveur continue de fonctionner, mais MongoDB n\'est pas disponible.');
-    console.error('💡 Pour tester MongoDB:');
-    console.error('   1. Démarrer MongoDB: sudo systemctl start mongod');
-    console.error('   2. Ou utiliser MongoDB Atlas et mettre à jour MONGODB_URI dans .env');
-    console.error('   3. Le serveur tentera de se reconnecter automatiquement');
+    console.error('Erreur connexion MongoDB:', error.message);
   });
-
-// Gestion des événements de connexion MongoDB
-mongoose.connection.on('connected', () => {
-  console.log('✅ MongoDB connecté avec succès!');
-});
 
 mongoose.connection.on('error', (err) => {
-  console.error('❌ Erreur MongoDB:', err.message);
+  console.error('Erreur MongoDB:', err.message);
 });
 
-mongoose.connection.on('disconnected', () => {
-  console.log('⚠️  MongoDB déconnecté');
-});
-
-// Route de test pour vérifier que le serveur fonctionne
+// ROUTE RACINE
 app.get('/', (req, res) => {
   res.json({
-    message: '🚀 Serveur backend fonctionne!',
-    status: 'OK',
-    timestamp: new Date().toISOString()
-  });
-});
-
-// Route de test pour vérifier la connexion MongoDB
-app.get('/api/test/mongodb', async (req, res) => {
-  try {
-    const dbStatus = mongoose.connection.readyState;
-    const states = {
-      0: 'déconnecté',
-      1: 'connecté',
-      2: 'connexion en cours',
-      3: 'déconnexion en cours'
-    };
-
-    res.json({
-      message: 'Test de connexion MongoDB',
-      status: dbStatus === 1 ? '✅ Connecté' : '❌ Non connecté',
-      readyState: dbStatus,
-      state: states[dbStatus] || 'inconnu',
-      database: mongoose.connection.name,
-      host: mongoose.connection.host,
-      port: mongoose.connection.port,
-      timestamp: new Date().toISOString()
-    });
-  } catch (error) {
-    res.status(500).json({
-      message: 'Erreur lors du test MongoDB',
-      error: error.message
-    });
-  }
-});
-
-// Route de test pour vérifier la connexion Frontend-Backend
-app.get('/api/test/connection', (req, res) => {
-  res.json({
-    message: '✅ Connexion Frontend-Backend réussie!',
+    message: 'MallConnect API',
     status: 'OK',
     timestamp: new Date().toISOString(),
-    server: 'Express.js',
-    version: '5.2.1'
+    endpoints: {
+      auth: '/api/auth',
+      boutiques: '/api/boutiques',
+      produits: '/api/produits',
+      panier: '/api/panier',
+      commandes: '/api/commandes',
+      avis: '/api/avis',
+      favoris: '/api/favoris',
+      admin: '/api/admin',
+      evenements: '/api/evenements'
+    }
   });
 });
 
-// Route POST de test
-app.post('/api/test/data', (req, res) => {
-  res.json({
-    message: '✅ Données reçues avec succès!',
-    receivedData: req.body,
-    timestamp: new Date().toISOString()
-  });
+// ROUTES
+const testRoutes = require('./routes/test.routes');
+const authRoutes = require('./routes/auth.routes');
+const boutiqueRoutes = require('./routes/boutique.routes');
+const uploadRoutes = require('./routes/upload.routes');
+const produitRoutes = require('./routes/produit.routes');
+const panierRoutes = require('./routes/panier.routes');
+const commandeRoutes = require('./routes/commande.routes');
+const avisRoutes = require('./routes/avis.routes');
+const favoriRoutes = require('./routes/favori.routes');
+const adminRoutes = require('./routes/admin.routes');
+const evenementRoutes = require('./routes/evenement.routes');
+
+app.use('/api/test', testRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/boutiques', boutiqueRoutes);
+app.use('/api/upload', uploadRoutes);
+app.use('/api/produits', produitRoutes);
+app.use('/api/panier', panierRoutes);
+app.use('/api/commandes', commandeRoutes);
+app.use('/api/avis', avisRoutes);
+app.use('/api/favoris', favoriRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/evenements', evenementRoutes);
+
+// GESTION ERREURS
+app.use((req, res) => {
+  res.status(404).json({ success: false, message: 'Route non trouvee', path: req.path });
 });
 
-// Import du modèle User
-const User = require('./models/User');
-
-// Route d'inscription (Register) avec support des rôles
-app.post('/api/auth/register', async (req, res) => {
-  try {
-    const { email, password, name, role, telephone } = req.body;
-
-    // Validation
-    if (!email || !password || !name) {
-      return res.status(400).json({
-        success: false,
-        message: 'Tous les champs sont requis (email, password, name)'
-      });
-    }
-
-    // Valider le rôle si fourni
-    const validRoles = ['admin', 'boutique', 'client'];
-    const userRole = role && validRoles.includes(role) ? role : 'client';
-
-    // Vérifier si l'utilisateur existe déjà
-    const existingUser = await User.findOne({ email: email.toLowerCase() });
-    if (existingUser) {
-      return res.status(400).json({
-        success: false,
-        message: 'Cet email est déjà utilisé'
-      });
-    }
-
-    // Créer un nouvel utilisateur
-    const user = new User({
-      email: email.toLowerCase(),
-      password: password, // En production, utiliser bcrypt pour hasher
-      name: name,
-      role: userRole,
-      telephone: telephone || undefined
-    });
-
-    await user.save();
-
-    res.status(201).json({
-      success: true,
-      message: 'Utilisateur créé avec succès!',
-      user: {
-        id: user._id,
-        email: user.email,
-        name: user.name,
-        role: user.role,
-        telephone: user.telephone,
-        createdAt: user.createdAt
-      }
-    });
-  } catch (error) {
-    console.error('Erreur lors de l\'inscription:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Erreur lors de l\'inscription',
-      error: error.message
-    });
-  }
-});
-
-// Route de connexion (Login)
-app.post('/api/auth/login', async (req, res) => {
-  try {
-    const { email, password } = req.body;
-
-    // Validation
-    if (!email || !password) {
-      return res.status(400).json({
-        success: false,
-        message: 'Email et mot de passe sont requis'
-      });
-    }
-
-    // Trouver l'utilisateur
-    const user = await User.findOne({ email: email.toLowerCase() });
-    if (!user) {
-      return res.status(401).json({
-        success: false,
-        message: 'Email ou mot de passe incorrect'
-      });
-    }
-
-    // Vérifier le mot de passe (en production, utiliser bcrypt.compare)
-    if (user.password !== password) {
-      return res.status(401).json({
-        success: false,
-        message: 'Email ou mot de passe incorrect'
-      });
-    }
-
-    // Vérifier si l'utilisateur est actif
-    if (!user.actif) {
-      return res.status(403).json({
-        success: false,
-        message: 'Votre compte a été suspendu'
-      });
-    }
-
-    // Connexion réussie
-    res.json({
-      success: true,
-      message: 'Connexion réussie!',
-      user: {
-        id: user._id,
-        email: user.email,
-        name: user.name,
-        role: user.role,
-        telephone: user.telephone,
-        avatar_url: user.avatar_url
-      }
-    });
-  } catch (error) {
-    console.error('Erreur lors de la connexion:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Erreur lors de la connexion',
-      error: error.message
-    });
-  }
-});
-
-// Route pour obtenir tous les utilisateurs (pour test)
-app.get('/api/auth/users', async (req, res) => {
-  try {
-    const users = await User.find().select('-password');
-    res.json({
-      success: true,
-      count: users.length,
-      users: users
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Erreur lors de la récupération des utilisateurs',
-      error: error.message
-    });
-  }
-});
-
-// Route pour obtenir les utilisateurs par rôle
-app.get('/api/auth/users/role/:role', async (req, res) => {
-  try {
-    const { role } = req.params;
-    const validRoles = ['admin', 'boutique', 'client'];
-    
-    if (!validRoles.includes(role)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Rôle invalide. Rôles valides: admin, boutique, client'
-      });
-    }
-
-    const users = await User.find({ role: role, actif: true }).select('-password');
-    res.json({
-      success: true,
-      count: users.length,
-      role: role,
-      users: users
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Erreur lors de la récupération des utilisateurs',
-      error: error.message
-    });
-  }
-});
-
-// Gestion des erreurs
 app.use((err, req, res, next) => {
-  console.error('Erreur:', err);
-  res.status(500).json({
+  console.error('Erreur Express:', err);
+  res.status(err.status || 500).json({
+    success: false,
     message: 'Erreur serveur',
-    error: err.message
+    error: process.env.NODE_ENV === 'development' ? err.message : 'Erreur interne'
   });
 });
 
-// Démarrage du serveur
+// DEMARRAGE
 app.listen(PORT, () => {
-  console.log(`🚀 Serveur backend démarré sur le port ${PORT}`);
-  console.log(`📍 URL: http://localhost:${PORT}`);
-  console.log(`🔗 Test MongoDB: http://localhost:${PORT}/api/test/mongodb`);
-  console.log(`🔗 Test Connection: http://localhost:${PORT}/api/test/connection`);
+  console.log('\n' + '='.repeat(60));
+  console.log('SERVEUR MALLCONNECT DEMARRE');
+  console.log('='.repeat(60));
+  console.log('Port:', PORT);
+  console.log('URL: http://localhost:' + PORT);
+  console.log('\nEndpoints:');
+  console.log('  POST /api/auth/register    - Inscription');
+  console.log('  POST /api/auth/login       - Connexion');
+  console.log('  GET  /api/auth/profile     - Profil');
+  console.log('  GET  /api/boutiques        - Boutiques');
+  console.log('  GET  /api/produits         - Produits');
+  console.log('  GET  /api/panier           - Panier');
+  console.log('  GET  /api/commandes        - Commandes');
+  console.log('  GET  /api/avis             - Avis');
+  console.log('  GET  /api/favoris          - Favoris');
+  console.log('  GET  /api/admin/dashboard  - Admin Dashboard');
+  console.log('='.repeat(60) + '\n');
 });
-

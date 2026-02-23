@@ -34,5 +34,28 @@ sudo systemctl status mongod
 mongosh --eval "db.version()"
 
 
+Equivalent a select * db.utilisateurs.find().pretty()
+db.boutiques.findOne({ nom: "Fanelie Boutique" })
+
+node scripts/insert-gael-boutique.js (insert directe base)
+
 LANCEMENT:
     mongosh 
+    show dbs (show database)
+
+    cd Backend: npm run dev
+    cd Frontend: cd Boutique: npm start http://localhost:4201/
+                 cd Admin: npm start http://localhost:4200/
+                 cd Acheteur: npm start http://localhost:4202/
+
+
+cd Backend
+node scripts/seed.js
+
+
+admin@mallconnect.mg	admin123	Acommercial
+cosmetique@boutique.mg	boutique123	(10 produits)
+mode@boutique.mg	boutique123	G
+supermarche@boutique.mg	boutique123	
+client@test.mg	client123	
+client2@test.mg	client123	

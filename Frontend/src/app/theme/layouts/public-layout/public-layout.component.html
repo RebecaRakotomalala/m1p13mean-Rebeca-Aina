@@ -1,0 +1,77 @@
+<!-- Navbar publique -->
+<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
+  <div class="container">
+    <a class="navbar-brand d-flex align-items-center" routerLink="/">
+      <img src="assets/images/logo-dark.svg" alt="MallConnect" height="36" class="me-2" />
+    </a>
+    <button class="navbar-toggler" type="button" (click)="menuOpen = !menuOpen">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" [class.show]="menuOpen">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">Accueil</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/catalogue" routerLinkActive="active">Catalogue</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/boutiques" routerLinkActive="active">Boutiques</a>
+        </li>
+      </ul>
+      <div class="d-flex align-items-center gap-2" *ngIf="!isLoggedIn">
+        <a routerLink="/login" class="btn btn-outline-primary btn-sm">Se connecter</a>
+        <a routerLink="/register" class="btn btn-primary btn-sm">S'inscrire</a>
+      </div>
+      <div class="d-flex align-items-center gap-3" *ngIf="isLoggedIn">
+        <a routerLink="/client/panier" class="btn btn-outline-secondary btn-sm position-relative">
+          🛒 Panier
+        </a>
+        <div class="dropdown" ngbDropdown>
+          <button class="btn btn-light btn-sm dropdown-toggle" ngbDropdownToggle>
+            {{ currentUser?.nom }} {{ currentUser?.prenom || '' }}
+          </button>
+          <div class="dropdown-menu dropdown-menu-end" ngbDropdownMenu>
+            <a class="dropdown-item" [routerLink]="dashboardLink">Mon espace</a>
+            <a class="dropdown-item" routerLink="/client/commandes">Mes commandes</a>
+            <a class="dropdown-item" routerLink="/client/favoris">Mes favoris</a>
+            <div class="dropdown-divider"></div>
+            <a class="dropdown-item text-danger" href="javascript:" (click)="logout()">Deconnexion</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- Contenu de la page -->
+<main>
+  <router-outlet></router-outlet>
+</main>
+
+<!-- Footer -->
+<footer class="bg-dark text-light py-4 mt-5">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-4 mb-3">
+        <h6 class="text-white">MallConnect</h6>
+        <p class="text-muted small">Votre centre commercial en ligne. Decouvrez les meilleures boutiques et produits.</p>
+      </div>
+      <div class="col-md-4 mb-3">
+        <h6 class="text-white">Liens utiles</h6>
+        <ul class="list-unstyled small">
+          <li><a routerLink="/catalogue" class="text-muted text-decoration-none">Catalogue</a></li>
+          <li><a routerLink="/boutiques" class="text-muted text-decoration-none">Boutiques</a></li>
+          <li><a routerLink="/register" class="text-muted text-decoration-none">Devenir vendeur</a></li>
+        </ul>
+      </div>
+      <div class="col-md-4 mb-3">
+        <h6 class="text-white">Contact</h6>
+        <p class="text-muted small mb-0">Email: contact&#64;mallconnect.mg</p>
+        <p class="text-muted small">Tel: +261 34 00 000 00</p>
+      </div>
+    </div>
+    <hr class="border-secondary" />
+    <p class="text-center text-muted small mb-0">MallConnect &copy; 2026 - Tous droits reserves</p>
+  </div>
+</footer>

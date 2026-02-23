@@ -1,0 +1,24 @@
+<!-- Vertical layout -->
+<ng-scrollbar style="height: calc(100vh - 49px)" visibility="hover" id="nav-ps-mantis">
+  <div class="navbar-content">
+    <ul class="nav coded-inner-navbar" (click)="fireOutClick()" (mouseleave)="navMob()">
+      @for (item of navigations; track item) {
+        @if (item.type === 'group') {
+          <app-nav-group [item]="item"></app-nav-group>
+        }
+      }
+    </ul>
+    <div class="m-4 mb-0">
+      <div class="card nav-card">
+        <div class="card-body">
+          <div class="d-flex flex-column align-items-center">
+            <div class="text-center">
+              <h5 class="mb-0">MallConnect</h5>
+              <span class="text-muted">v{{ currentApplicationVersion }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</ng-scrollbar>
