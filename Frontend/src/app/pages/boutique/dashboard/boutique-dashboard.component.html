@@ -1,0 +1,212 @@
+<!-- Loading -->
+@if (loading) {
+  <div class="text-center py-5">
+    <div class="spinner-border text-primary spinner-border-lg" role="status"></div>
+    <p class="mt-3 text-muted">Chargement des statistiques...</p>
+  </div>
+}
+
+<!-- Error -->
+@if (error && !loading) {
+  <div class="alert alert-danger">
+    <i antIcon type="exclamation-circle" theme="outline" class="me-2"></i>
+    <strong>Erreur :</strong> {{ error }}
+    <button class="btn btn-sm btn-outline-danger ms-3" (click)="loadStats()">
+      <i antIcon type="reload" theme="outline" class="me-1"></i> Réessayer
+    </button>
+  </div>
+}
+
+@if (stats && !loading) {
+  <!-- 🔝 Stats rapides -->
+  <div class="row mb-4">
+    <div class="col-md-6 col-xl-3 mb-3 fade-in animated">
+      <div class="stat-card stat-card-primary">
+        <div class="stat-card-body">
+          <div class="stat-icon-wrapper stat-icon-primary">
+            <i antIcon type="inbox" theme="outline" class="stat-icon-i"></i>
+          </div>
+          <div class="stat-info">
+            <span class="stat-value">{{ stats.totalProduits || 0 }}</span>
+            <span class="stat-label">Produits actifs</span>
+          </div>
+        </div>
+        <div class="stat-card-footer">
+          <a [routerLink]="['/boutique/produits']" class="btn btn-sm btn-outline-primary w-100">
+            <i antIcon type="eye" theme="outline" class="me-1"></i> Gérer
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6 col-xl-3 mb-3 fade-in animated" style="animation-delay: 100ms">
+      <div class="stat-card stat-card-success">
+        <div class="stat-card-body">
+          <div class="stat-icon-wrapper stat-icon-success">
+            <i antIcon type="account-book" theme="outline" class="stat-icon-i"></i>
+          </div>
+          <div class="stat-info">
+            <span class="stat-value">{{ (stats.totalVentes || 0) | number:'1.0-0' }}</span>
+            <span class="stat-label">Ventes (Ar)</span>
+            <span class="stat-sub">{{ stats.commandesCount || 0 }} commande(s)</span>
+          </div>
+        </div>
+        <div class="stat-card-footer">
+          <a [routerLink]="['/boutique/commandes']" class="btn btn-sm btn-outline-success w-100">
+            <i antIcon type="eye" theme="outline" class="me-1"></i> Voir
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6 col-xl-3 mb-3 fade-in animated" style="animation-delay: 200ms">
+      <div class="stat-card stat-card-warning">
+        <div class="stat-card-body">
+          <div class="stat-icon-wrapper stat-icon-warning">
+            <i antIcon type="clock-circle" theme="outline" class="stat-icon-i"></i>
+          </div>
+          <div class="stat-info">
+            <span class="stat-value text-warning">{{ stats.commandesEnAttente || 0 }}</span>
+            <span class="stat-label">En attente</span>
+            <span class="stat-sub">À traiter</span>
+          </div>
+        </div>
+        <div class="stat-card-footer">
+          <a [routerLink]="['/boutique/commandes']" [queryParams]="{statut: 'en_attente'}" class="btn btn-sm btn-outline-warning w-100">
+            <i antIcon type="eye" theme="outline" class="me-1"></i> Voir
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6 col-xl-3 mb-3 fade-in animated" style="animation-delay: 300ms">
+      <div class="stat-card stat-card-info">
+        <div class="stat-card-body">
+          <div class="stat-icon-wrapper stat-icon-info">
+            <i antIcon type="star" theme="outline" class="stat-icon-i"></i>
+          </div>
+          <div class="stat-info">
+            <span class="stat-value">{{ stats.totalAvis || 0 }}</span>
+            <span class="stat-label">Avis clients</span>
+            <span class="stat-sub">Note moyenne</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Graphiques -->
+  @if (salesChartOptions && categoriesChartOptions && ordersChartOptions) {
+    <div class="row g-4 mb-4">
+      <div class="col-lg-8 slide-in-left animated" style="animation-delay: 400ms">
+        <app-card cardTitle="📈 Évolution des Ventes">
+          <apx-chart
+            #salesChart
+            [series]="salesChartOptions.series"
+            [chart]="salesChartOptions.chart"
+            [dataLabels]="salesChartOptions.dataLabels"
+            [stroke]="salesChartOptions.stroke"
+            [colors]="salesChartOptions.colors"
+            [xaxis]="salesChartOptions.xaxis"
+            [yaxis]="salesChartOptions.yaxis"
+            [grid]="salesChartOptions.grid"
+            [fill]="salesChartOptions.fill"
+            [tooltip]="salesChartOptions.tooltip"
+          ></apx-chart>
+        </app-card>
+      </div>
+
+      <div class="col-lg-4 slide-in-right animated" style="animation-delay: 500ms">
+        <app-card cardTitle="🍩 Produits par Catégorie">
+          <apx-chart
+            #categoriesChart
+            [series]="categoriesChartOptions.series"
+            [chart]="categoriesChartOptions.chart"
+            [labels]="categoriesChartOptions.labels"
+            [colors]="categoriesChartOptions.colors"
+            [legend]="categoriesChartOptions.legend"
+            [dataLabels]="categoriesChartOptions.dataLabels"
+            [plotOptions]="categoriesChartOptions.plotOptions"
+            [tooltip]="categoriesChartOptions.tooltip"
+          ></apx-chart>
+        </app-card>
+      </div>
+
+      <div class="col-lg-12 slide-in-up animated" style="animation-delay: 600ms">
+        <app-card cardTitle="📊 Commandes par Statut">
+          <apx-chart
+            #ordersChart
+            [series]="ordersChartOptions.series"
+            [chart]="ordersChartOptions.chart"
+            [plotOptions]="ordersChartOptions.plotOptions"
+            [dataLabels]="ordersChartOptions.dataLabels"
+            [colors]="ordersChartOptions.colors"
+            [xaxis]="ordersChartOptions.xaxis"
+            [yaxis]="ordersChartOptions.yaxis"
+            [grid]="ordersChartOptions.grid"
+            [tooltip]="ordersChartOptions.tooltip"
+          ></apx-chart>
+        </app-card>
+      </div>
+    </div>
+  }
+
+  <!-- Boutiques Table -->
+  @if (stats.boutiques && stats.boutiques.length > 0) {
+    <div class="slide-in-up animated" style="animation-delay: 700ms">
+      <app-card cardTitle="🏪 Mes Boutiques">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle stock-table">
+            <thead class="table-light">
+              <tr>
+                <th><i antIcon type="shop" theme="outline" class="me-1"></i> Nom</th>
+                <th><i antIcon type="appstore" theme="outline" class="me-1"></i> Catégorie</th>
+                <th><i antIcon type="check-circle" theme="outline" class="me-1"></i> Statut</th>
+                <th><i antIcon type="star" theme="outline" class="me-1"></i> Note</th>
+                <th><i antIcon type="eye" theme="outline" class="me-1"></i> Vues</th>
+                <th class="text-end">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (b of stats.boutiques; track b.nom) {
+                <tr>
+                  <td><strong>{{ b.nom }}</strong></td>
+                  <td><span class="badge bg-light text-dark">{{ b.categorie_principale || 'N/A' }}</span></td>
+                  <td>
+                    <span class="badge" [ngClass]="b.statut === 'active' ? 'bg-success' : 'bg-warning'">
+                      {{ b.statut || 'N/A' }}
+                    </span>
+                  </td>
+                  <td>
+                    <strong>{{ (b.note_moyenne || 0) | number:'1.1-1' }}</strong>
+                    <span class="text-muted">/5</span>
+                  </td>
+                  <td><span class="text-muted">{{ b.nombre_vues || 0 }}</span></td>
+                  <td class="text-end">
+                    <a [routerLink]="['/boutique/myspace']" class="btn btn-sm btn-outline-primary">
+                      <i antIcon type="eye" theme="outline"></i>
+                    </a>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </app-card>
+    </div>
+  }
+
+  <!-- Empty State -->
+  @if (!stats.boutiques?.length) {
+    <div class="text-center py-5 slide-in-up animated">
+      <app-card>
+        <i antIcon type="shop" theme="outline" class="f-48 text-muted d-block mb-3"></i>
+        <h5 class="text-muted">Aucune boutique trouvée</h5>
+        <p class="text-muted">Vous n'avez pas encore de boutique associée.</p>
+        <a [routerLink]="['/boutique/myspace']" class="btn btn-primary">
+          <i antIcon type="plus" theme="outline" class="me-1"></i> Créer une boutique
+        </a>
+      </app-card>
+    </div>
+  }
+}

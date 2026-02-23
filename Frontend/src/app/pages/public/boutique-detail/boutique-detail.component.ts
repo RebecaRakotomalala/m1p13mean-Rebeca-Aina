@@ -1,68 +1,15 @@
 import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, ActivatedRoute } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 
 @Component({
   selector: 'app-boutique-detail',
-  imports: [CommonModule, RouterModule],
-  template: `
-    <div class="container py-4" *ngIf="boutique">
-      <!-- Header boutique -->
-      <div class="card mb-4">
-        <div class="card-body">
-          <div class="d-flex align-items-center gap-3">
-            <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center"
-                 style="width:80px;height:80px;font-size:32px;flex-shrink:0;">
-              {{ boutique.nom?.charAt(0)?.toUpperCase() }}
-            </div>
-            <div>
-              <h2 class="mb-1">{{ boutique.nom }}</h2>
-              <span class="badge bg-light text-dark me-2">{{ boutique.categorie_principale }}</span>
-              <span *ngIf="boutique.note_moyenne > 0" class="text-warning">★ {{ boutique.note_moyenne | number:'1.1-1' }}/5</span>
-              <span class="text-muted ms-1" *ngIf="boutique.nombre_avis">({{ boutique.nombre_avis }} avis)</span>
-              <p class="text-muted mb-0 mt-1" *ngIf="boutique.description_courte">{{ boutique.description_courte }}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Produits de la boutique -->
-      <h4 class="mb-3">Produits de cette boutique</h4>
-      <div class="row">
-        <div class="col-6 col-md-4 col-lg-3 mb-4" *ngFor="let p of produits">
-          <div class="card h-100 product-card" [routerLink]="['/catalogue/produit', p._id]" style="cursor:pointer;">
-            <img [src]="p.image_principale || 'assets/images/authentication/img-placeholder.svg'"
-                 class="card-img-top" style="height:180px;object-fit:cover;" [alt]="p.nom" />
-            <div class="card-body p-2">
-              <h6 class="card-title mb-1 text-truncate">{{ p.nom }}</h6>
-              <div>
-                <span *ngIf="p.prix_promo" class="text-decoration-line-through text-muted small me-1">{{ p.prix_initial | number:'1.0-0' }} Ar</span>
-                <strong class="text-primary">{{ (p.prix_promo || p.prix_initial) | number:'1.0-0' }} Ar</strong>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div *ngIf="produits.length === 0 && !loading" class="text-center text-muted py-4">
-        <p>Cette boutique n'a pas encore de produits.</p>
-      </div>
-    </div>
-    <div *ngIf="!boutique && !loading" class="container py-5 text-center">
-      <h4>Boutique non trouvee</h4>
-      <a routerLink="/boutiques" class="btn btn-primary mt-2">Retour aux boutiques</a>
-    </div>
-    <div *ngIf="loading" class="container py-5 text-center">
-      <div class="spinner-border text-primary" role="status"></div>
-    </div>
-  `,
-  styles: [`
-    .product-card {
-      border: 1px solid #eee;
-      transition: all 0.2s ease;
-      &:hover { box-shadow: 0 4px 15px rgba(0,0,0,0.1); transform: translateY(-3px); }
-    }
-  `]
+  standalone: true,
+  imports: [CommonModule, RouterModule, FormsModule],
+  templateUrl: './boutique-detail.component.html',
+  styleUrls: ['./boutique-detail.component.scss']
 })
 export class BoutiqueDetailComponent implements OnInit {
   private http = inject(HttpClient);
@@ -71,7 +18,14 @@ export class BoutiqueDetailComponent implements OnInit {
 
   boutique: any = null;
   produits: any[] = [];
+  filteredProduits: any[] = [];
   loading = true;
+  produitsLoading = true;
+  search = '';
+  selectedCategorie = '';
+  categories: string[] = [];
+  sortBy: 'nom' | 'prix_asc' | 'prix_desc' | 'populaire' = 'nom';
+  viewMode: 'grid' | 'list' = 'grid';
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
@@ -82,23 +36,118 @@ export class BoutiqueDetailComponent implements OnInit {
           if (res.success) this.boutique = res.boutique;
           this.cdr.detectChanges();
         },
-        error: (err) => {
-          console.error('[BoutiqueDetail] Error:', err);
+        error: () => {
           this.loading = false;
           this.cdr.detectChanges();
         }
       });
       this.http.get<any>(`http://localhost:3000/api/produits/boutique/${id}`).subscribe({
         next: (res) => {
-          if (res.success) this.produits = res.produits;
+          this.produitsLoading = false;
+          if (res.success) {
+            this.produits = (res.produits || []).filter((p: any) => p.actif);
+            this.extractCategories();
+            this.applyFilters();
+          }
           this.cdr.detectChanges();
         },
-        error: (err) => {
-          console.error('[BoutiqueDetail] Produits Error:', err);
+        error: () => {
+          this.produitsLoading = false;
+          this.cdr.detectChanges();
         }
       });
     } else {
       this.loading = false;
+      this.produitsLoading = false;
     }
+  }
+
+  extractCategories(): void {
+    const cats = new Set<string>();
+    this.produits.forEach(p => { if (p.categorie) cats.add(p.categorie); });
+    this.categories = Array.from(cats).sort();
+  }
+
+  applyFilters(): void {
+    const s = this.search.toLowerCase().trim();
+    let result = this.produits;
+
+    if (s) {
+      result = result.filter(p =>
+        p.nom?.toLowerCase().includes(s) ||
+        p.categorie?.toLowerCase().includes(s)
+      );
+    }
+
+    if (this.selectedCategorie) {
+      result = result.filter(p => p.categorie === this.selectedCategorie);
+    }
+
+    // Sort
+    switch (this.sortBy) {
+      case 'prix_asc':
+        result = [...result].sort((a, b) => (a.prix_promo || a.prix_initial) - (b.prix_promo || b.prix_initial));
+        break;
+      case 'prix_desc':
+        result = [...result].sort((a, b) => (b.prix_promo || b.prix_initial) - (a.prix_promo || a.prix_initial));
+        break;
+      case 'populaire':
+        result = [...result].sort((a, b) => (b.nombre_ventes || 0) - (a.nombre_ventes || 0));
+        break;
+      default:
+        result = [...result].sort((a, b) => a.nom.localeCompare(b.nom));
+    }
+
+    this.filteredProduits = result;
+  }
+
+  getInitials(nom: string): string {
+    if (!nom) return '?';
+    const words = nom.trim().split(/\s+/);
+    if (words.length >= 2) return (words[0][0] + words[1][0]).toUpperCase();
+    return nom.charAt(0).toUpperCase();
+  }
+
+  getGradient(nom: string): string {
+    const gradients = [
+      'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+      'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+      'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
+      'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
+      'linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)',
+      'linear-gradient(135deg, #fccb90 0%, #d57eeb 100%)',
+      'linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%)',
+    ];
+    let hash = 0;
+    for (let i = 0; i < nom.length; i++) {
+      hash = nom.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return gradients[Math.abs(hash) % gradients.length];
+  }
+
+  getStars(note: number): number[] {
+    return Array(5).fill(0).map((_, i) => i < Math.round(note) ? 1 : 0);
+  }
+
+  getDiscount(p: any): number {
+    if (!p.prix_promo || !p.prix_initial || p.prix_promo >= p.prix_initial) return 0;
+    return Math.round((1 - p.prix_promo / p.prix_initial) * 100);
+  }
+
+  get totalValue(): number {
+    return this.produits.reduce((sum, p) => sum + (p.prix_promo || p.prix_initial || 0), 0);
+  }
+
+  get avgPrice(): number {
+    if (this.produits.length === 0) return 0;
+    return this.totalValue / this.produits.length;
+  }
+
+  clearFilters(): void {
+    this.search = '';
+    this.selectedCategorie = '';
+    this.sortBy = 'nom';
+    this.applyFilters();
   }
 }
