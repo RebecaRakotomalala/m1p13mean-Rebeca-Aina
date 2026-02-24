@@ -13,6 +13,8 @@ import { AuthService } from '../../../../services/auth.service';
 export class AuthLoginComponent {
   email = '';
   password = '';
+  rememberMe = false;
+  showPassword = false;
   errorMessage = '';
   loading = false;
 
@@ -40,5 +42,9 @@ export class AuthLoginComponent {
         this.errorMessage = err.error?.message || 'Erreur de connexion';
       }
     });
+  }
+
+  togglePasswordVisibility(): void {
+    this.showPassword = !this.showPassword;
   }
 }
