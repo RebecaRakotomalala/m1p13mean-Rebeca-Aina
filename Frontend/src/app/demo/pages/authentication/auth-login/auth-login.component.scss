@@ -132,11 +132,26 @@
   align-items: center;
   justify-content: center;
   padding: 40px 24px;
+  background:
+    radial-gradient(circle at 90% 10%, rgba(102, 126, 234, 0.08), transparent 45%),
+    radial-gradient(circle at 10% 90%, rgba(118, 75, 162, 0.06), transparent 40%),
+    #f8f9ff;
 }
 
 .auth-form-container {
   width: 100%;
   max-width: 420px;
+}
+
+.auth-form-card {
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: 20px;
+  padding: 34px 30px;
+  box-shadow:
+    0 20px 45px rgba(26, 26, 46, 0.1),
+    0 1px 0 rgba(255, 255, 255, 0.7) inset;
+  backdrop-filter: blur(6px);
 }
 
 .auth-mobile-logo {
@@ -147,6 +162,19 @@
 
 .auth-form-header {
   margin-bottom: 32px;
+}
+
+.auth-form-badge {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #f0f4ff, #ede7f6);
+  color: #667eea;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  margin-bottom: 12px;
 }
 
 .auth-form-title {
@@ -221,7 +249,7 @@
 
 .auth-input {
   width: 100%;
-  padding: 13px 16px 13px 44px;
+  padding: 13px 46px 13px 44px;
   border: 1.5px solid #e8e8e8;
   border-radius: 12px;
   font-size: 14px;
@@ -251,6 +279,63 @@
 
 .auth-input-wrap:focus-within .auth-input-icon {
   color: #667eea;
+}
+
+.auth-toggle-password {
+  position: absolute;
+  right: 12px;
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #bfbfbf;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    color: #667eea;
+    background: #f5f6fa;
+  }
+}
+
+.auth-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: -4px;
+  margin-bottom: 4px;
+}
+
+.auth-remember {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #8c8c8c;
+  cursor: pointer;
+  user-select: none;
+
+  input {
+    width: 14px;
+    height: 14px;
+    accent-color: #667eea;
+    cursor: pointer;
+  }
+}
+
+.auth-forgot-link {
+  font-size: 13px;
+  color: #667eea;
+  text-decoration: none;
+  font-weight: 600;
+  cursor: default;
+  opacity: 0.9;
+
 }
 
 // Submit
@@ -386,7 +471,18 @@
     padding: 24px 20px;
   }
 
+  .auth-form-card {
+    padding: 24px 18px;
+    border-radius: 16px;
+    box-shadow: 0 14px 28px rgba(26, 26, 46, 0.08);
+  }
+
   .auth-form-title {
     font-size: 1.5rem;
+  }
+
+  .auth-row {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }
