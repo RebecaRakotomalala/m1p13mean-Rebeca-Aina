@@ -23,7 +23,8 @@ const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/mall';
 // CONNEXION MONGODB
 mongoose.connect(MONGODB_URI, {
   serverSelectionTimeoutMS: 5000,
-  retryWrites: true
+  retryWrites: true,
+  family: 4 
 })
   .then(() => {
     console.log('Connexion MongoDB reussie!');
