@@ -15,8 +15,8 @@ const User = require('../models/User');
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/mall';
 
 // IDs de référence
-const BOUTIQUE_USER_ID = '6991e1d5edc6481bd0584e24'; // utilisateur_id de Beauty Mada
-const BOUTIQUE_ID = '6991e1d5edc6481bd0584e2e'; // _id de Beauty Mada
+const BOUTIQUE_USER_ID = '69a07d512b32fffa626a6d49'; // utilisateur_id de Beauty Mada
+const BOUTIQUE_ID = '69a07d522b32fffa626a6d5b'; // _id de Beauty Mada
 
 // Fonction pour générer un slug à partir du nom
 function generateSlug(nom) {

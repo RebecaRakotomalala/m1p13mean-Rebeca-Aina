@@ -38,7 +38,13 @@
             <div class="logo-container position-absolute">
               <div class="logo-wrapper position-relative">
                 @if (boutique.logo_url) {
-                  <div class="logo-display-wrapper" (dblclick)="openLogoModal($event)" title="Double-cliquez pour voir en grand">
+                  <div class="logo-display-wrapper position-relative" (dblclick)="openLogoModal($event)" title="Double-cliquez pour voir en grand">
+                    @if (uploadingLogo) {
+                      <div class="upload-overlay d-flex flex-column align-items-center justify-content-center" style="border-radius: 50%;">
+                        <div class="spinner-border spinner-border-sm text-white" role="status"></div>
+                        <span class="small text-white mt-2">Upload...</span>
+                      </div>
+                    }
                     <img [src]="boutique.logo_url" alt="Logo" class="logo-img rounded-circle border border-white border-4" style="width: 120px; height: 120px; object-fit: cover; background: white;">
                     <div class="logo-actions">
                       <button type="button" class="btn btn-sm btn-light logo-action-btn" (click)="openLogoModal($event)" title="Voir en grand">
@@ -46,6 +52,9 @@
                       </button>
                       <button type="button" class="btn btn-sm btn-primary logo-action-btn" (click)="triggerLogoUpload($event)" [disabled]="uploadingLogo" title="Changer le logo">
                         <i antIcon type="camera" theme="outline" class="f-14"></i>
+                        @if (uploadingLogo) {
+                          <span class="spinner-border spinner-border-sm ms-1 text-white" role="status"></span>
+                        }
                       </button>
                     </div>
                   </div>
