@@ -585,7 +585,6 @@ exports.getBeneficeStats = async (req, res) => {
     res.status(500).json({ success: false, message: 'Erreur calcul bénéfice', error: error.message });
   }
 };
-
 // Stats pour le proprietaire de boutique
 exports.getBoutiqueStats = async (req, res) => {
   try {

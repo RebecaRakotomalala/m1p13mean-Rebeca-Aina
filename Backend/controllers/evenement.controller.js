@@ -1,29 +1,37 @@
 const Evenement = require('../models/Evenement');
 const Boutique = require('../models/Boutique');
+const BOUTIQUES_ACTIVES_CACHE_TTL_MS = 60000;
+let boutiquesActivesCache = { ts: 0, data: null };
 
 // Lister tous les evenements (avec filtres)
 exports.getAllEvenements = async (req, res) => {
   try {
     const { statut, type, page = 1, limit = 20 } = req.query;
-    let query = {};
+    const parsedPage = Math.max(1, Number(page) || 1);
+    const parsedLimit = Math.max(1, Math.min(100, Number(limit) || 20));
+    const skip = (parsedPage - 1) * parsedLimit;
+    const query = {};
     if (statut) query.statut = statut;
     if (type) query.type = type;
 
-    const skip = (Number(page) - 1) * Number(limit);
-    const total = await Evenement.countDocuments(query);
-    const evenements = await Evenement.find(query)
-      .populate('cree_par', 'nom prenom email')
-      .populate('boutiques_participantes', 'nom logo_url categorie_principale')
-      .sort({ date_debut: -1 })
-      .skip(skip)
-      .limit(Number(limit));
+    const [total, evenements] = await Promise.all([
+      Evenement.countDocuments(query),
+      Evenement.find(query)
+        .select('titre description type date_debut date_fin image_url boutiques_participantes capacite_max lieu statut cree_par date_creation')
+        .populate('cree_par', 'nom prenom email')
+        .populate('boutiques_participantes', 'nom categorie_principale')
+        .sort({ date_debut: -1 })
+        .skip(skip)
+        .limit(parsedLimit)
+        .lean()
+    ]);
 
     res.json({
       success: true,
       count: evenements.length,
       total,
-      page: Number(page),
-      pages: Math.ceil(total / Number(limit)),
+      page: parsedPage,
+      pages: Math.ceil(total / parsedLimit),
       evenements
     });
   } catch (error) {
@@ -36,7 +44,8 @@ exports.getEvenementById = async (req, res) => {
   try {
     const evenement = await Evenement.findById(req.params.id)
       .populate('cree_par', 'nom prenom email')
-      .populate('boutiques_participantes', 'nom logo_url categorie_principale email_contact');
+      .populate('boutiques_participantes', 'nom logo_url categorie_principale email_contact')
+      .lean();
     if (!evenement) return res.status(404).json({ success: false, message: 'Evenement non trouve' });
     res.json({ success: true, evenement });
   } catch (error) {
@@ -149,7 +158,14 @@ exports.updateStatutEvenement = async (req, res) => {
 // Obtenir les boutiques actives (pour le select des participants)
 exports.getBoutiquesActives = async (req, res) => {
   try {
-    const boutiques = await Boutique.find({ statut: 'active' }).select('nom logo_url categorie_principale').sort({ nom: 1 });
+    if (boutiquesActivesCache.data && Date.now() - boutiquesActivesCache.ts < BOUTIQUES_ACTIVES_CACHE_TTL_MS) {
+      return res.json({ success: true, boutiques: boutiquesActivesCache.data });
+    }
+    const boutiques = await Boutique.find({ statut: 'active' })
+      .select('nom logo_url categorie_principale')
+      .sort({ nom: 1 })
+      .lean();
+    boutiquesActivesCache = { ts: Date.now(), data: boutiques };
     res.json({ success: true, boutiques });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Erreur recuperation boutiques', error: error.message });

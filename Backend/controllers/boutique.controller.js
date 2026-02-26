@@ -32,13 +32,16 @@ exports.createBoutique = async (req, res) => {
 // Obtenir toutes les boutiques
 exports.getAllBoutiques = async (req, res) => {
   try {
-    const { statut, categorie, search } = req.query;
-    const boutiques = await boutiqueService.getAllBoutiques({ statut, categorie, search });
+    const { statut, categorie, search, page = 1, limit = 20 } = req.query;
+    const result = await boutiqueService.getAllBoutiques({ statut, categorie, search, page, limit });
 
     res.json({
       success: true,
-      count: boutiques.length,
-      boutiques: boutiques
+      count: result.boutiques.length,
+      total: result.total,
+      page: result.page,
+      pages: result.pages,
+      boutiques: result.boutiques
     });
   } catch (error) {
     res.status(500).json({

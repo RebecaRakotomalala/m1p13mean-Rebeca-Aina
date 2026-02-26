@@ -95,5 +95,6 @@ evenementSchema.index({ date_debut: 1 });
 evenementSchema.index({ date_fin: 1 });
 evenementSchema.index({ statut: 1 });
 evenementSchema.index({ type: 1 });
+evenementSchema.index({ statut: 1, type: 1, date_debut: -1 });
 
 module.exports = mongoose.model('Evenement', evenementSchema, 'evenements');

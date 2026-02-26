@@ -87,6 +87,7 @@ const userSchema = new mongoose.Schema({
 userSchema.index({ email: 1 });
 userSchema.index({ role: 1 });
 userSchema.index({ actif: 1 });
+userSchema.index({ date_creation: -1 });
 
 module.exports = mongoose.model('User', userSchema, 'utilisateurs');
 

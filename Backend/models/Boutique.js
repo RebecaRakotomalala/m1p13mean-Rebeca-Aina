@@ -219,6 +219,7 @@ boutiqueSchema.index({ slug: 1 }, { unique: true });
 boutiqueSchema.index({ categorie_principale: 1 });
 boutiqueSchema.index({ statut: 1 });
 boutiqueSchema.index({ note_moyenne: -1 });
+boutiqueSchema.index({ date_creation: -1 });
 
 module.exports = mongoose.model('Boutique', boutiqueSchema, 'boutiques');
 
