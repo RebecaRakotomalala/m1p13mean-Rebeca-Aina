@@ -11,7 +11,7 @@ import { CardComponent } from '../../../theme/shared/components/card/card.compon
   imports: [CommonModule, RouterModule, FormsModule, CardComponent, NgApexchartsModule],
   template: `
     <div class="admin-dashboard-theme">
-    <app-card cardTitle="Pilotage du centre commercial MallCConnect" cardClass="dashboard-hero-card" headerClass="dashboard-hero-header">
+    <app-card cardTitle="Pilotage du centre commercial MallConnect" cardClass="dashboard-hero-card" headerClass="dashboard-hero-header">
       <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
         <div>
           <h5 class="mb-1">Dashboard Statistique Admin</h5>
