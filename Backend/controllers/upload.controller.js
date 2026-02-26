@@ -42,7 +42,15 @@ exports.uploadImage = async (req, res) => {
                         error.message || 
                         'Erreur inconnue lors de l\'upload';
 
-    const statusCode = error.message.includes('Aucun fichier') || error.message.includes('Format') ? 400 : 500;
+    let statusCode;
+    if (error.message.includes('Aucun fichier') || error.message.includes('Format')) {
+      statusCode = 400;
+    } else if (error.message.includes('Impossible de se connecter à Cloudinary')) {
+      // réseau ou service indisponible
+      statusCode = 503;
+    } else {
+      statusCode = 500;
+    }
 
     res.status(statusCode).json({
       success: false,

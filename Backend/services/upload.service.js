@@ -5,6 +5,20 @@
 
 const axios = require('axios');
 const FormData = require('form-data');
+const http = require('http');
+const https = require('https');
+
+// Forcer IPv4 afin d'éviter que Node tente une connexion IPv6 qui finit par
+// ETIMEDOUT sur certaines configurations réseau locales. curl bascule rapidement
+// vers IPv4, d'où l'apparente contradiction entre le curl qui fonctionne et
+// axios qui time-out.
+const axiosInstance = axios.create({
+  httpAgent: new http.Agent({ family: 4 }),
+  httpsAgent: new https.Agent({ family: 4 }),
+  timeout: 30000,
+  maxContentLength: Infinity,
+  maxBodyLength: Infinity
+});
 
 // Configuration Cloudinary
 const CLOUDINARY_URL = 'https://api.cloudinary.com/v1_1/ddsocampb/image/upload';
@@ -82,44 +96,65 @@ async function uploadImage(file, folder = null) {
   const headers = formData.getHeaders();
   console.log('   Content-Type:', headers['content-type']);
   
-  // Upload vers Cloudinary avec gestion d'erreur améliorée
+  // Upload vers Cloudinary avec gestion d'erreur améliorée et répétition automatique
   let response;
-  try {
-    response = await axios.post(CLOUDINARY_URL, formData, {
-      headers: headers,
-      timeout: 30000, // 30 secondes timeout
-      maxContentLength: Infinity,
-      maxBodyLength: Infinity
-    });
-  } catch (axiosError) {
-    console.error('❌ Erreur axios:', axiosError.message);
-    console.error('   Code:', axiosError.code);
-    
-    if (axiosError.response) {
-      console.error('   Status:', axiosError.response.status);
-      console.error('   Status Text:', axiosError.response.statusText);
-      console.error('   Data:', JSON.stringify(axiosError.response.data, null, 2));
-      
-      // Erreur spécifique Cloudinary
-      if (axiosError.response.data?.error) {
-        const cloudinaryError = axiosError.response.data.error;
-        const errorMsg = cloudinaryError.message || JSON.stringify(cloudinaryError);
-        throw new Error(`Cloudinary Error: ${errorMsg}`);
+  const maxAttempts = 3;
+  let attempt = 0;
+
+  // helper de pause
+  const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+  while (true) {
+    try {
+      attempt++;
+      response = await axiosInstance.post(CLOUDINARY_URL, formData, {
+        headers: headers
+      });
+      break; // succès, sortir de la boucle
+    } catch (axiosError) {
+      // si on a une réponse, c'est une erreur de Cloudinary, on ne retry pas
+      if (axiosError.response) {
+        console.error('❌ Erreur axios:', axiosError.message);
+        console.error('   Code:', axiosError.code);
+        console.error('   Status:', axiosError.response.status);
+        console.error('   Status Text:', axiosError.response.statusText);
+        console.error('   Data:', JSON.stringify(axiosError.response.data, null, 2));
+
+        // Erreur spécifique Cloudinary
+        if (axiosError.response.data?.error) {
+          const cloudinaryError = axiosError.response.data.error;
+          const errorMsg = cloudinaryError.message || JSON.stringify(cloudinaryError);
+          throw new Error(`Cloudinary Error: ${errorMsg}`);
+        }
+
+        // Erreur de validation Cloudinary
+        if (axiosError.response.status === 400) {
+          throw new Error(`Erreur de validation Cloudinary: ${JSON.stringify(axiosError.response.data)}`);
+        }
+
+        // si nous arrivons ici, on renvoie l'erreur originale
+        throw axiosError;
       }
-      
-      // Erreur de validation Cloudinary
-      if (axiosError.response.status === 400) {
-        throw new Error(`Erreur de validation Cloudinary: ${JSON.stringify(axiosError.response.data)}`);
+
+      // pas de réponse (probablement un problème réseau)
+      console.warn(`⚠️ Tentative ${attempt} échouée : aucune réponse de Cloudinary`);
+      console.warn('   axiosError.code:', axiosError.code, 'message:', axiosError.message);
+      if (axiosError.config) {
+        console.warn('   url:', axiosError.config.url);
       }
-    } else if (axiosError.request) {
-      console.error('   Aucune réponse reçue de Cloudinary');
-      throw new Error('Impossible de se connecter à Cloudinary. Vérifiez votre connexion internet.');
-    } else {
-      console.error('   Erreur de configuration:', axiosError.message);
-      throw new Error(`Erreur de configuration: ${axiosError.message}`);
+      if (attempt >= maxAttempts) {
+        console.error('❌ Toutes les tentatives ont échoué, échec de la connexion à Cloudinary');
+        if (axiosError.request) {
+          throw new Error('Impossible de se connecter à Cloudinary. Vérifiez votre connexion internet et réessayez.');
+        }
+        throw axiosError;
+      }
+      // attendre un peu avant de réessayer (backoff exponentiel)
+      const delay = 1000 * attempt;
+      console.log(`   Attente de ${delay}ms avant la prochaine tentative...`);
+      await wait(delay);
+      continue; // retenter
     }
-    
-    throw axiosError;
   }
 
   console.log('✅ Upload réussi vers Cloudinary');
@@ -163,10 +198,35 @@ async function uploadMultipleImages(files, folder = null) {
       formData.append('upload_preset', UPLOAD_PRESET);
       formData.append('folder', uploadFolder);
 
-      // Upload vers Cloudinary
-      const response = await axios.post(CLOUDINARY_URL, formData, {
-        headers: formData.getHeaders()
-      });
+      // Upload vers Cloudinary avec répétition en cas de problème réseau
+      let response;
+      const maxAttemptsMulti = 3;
+      let attemptMulti = 0;
+      const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+      while (true) {
+        try {
+          attemptMulti++;
+          response = await axiosInstance.post(CLOUDINARY_URL, formData, {
+            headers: formData.getHeaders()
+          });
+          break;
+        } catch (err) {
+          if (err.response) {
+            // délégué à la boucle extérieure pour le logging
+            throw err;
+          }
+          console.warn(`⚠️ Tentative ${attemptMulti} pour upload multiple échouée (sans réponse)`);
+          if (attemptMulti >= maxAttemptsMulti) {
+            console.error('❌ Échec de toutes les tentatives pour ce fichier');
+            throw new Error('Impossible de se connecter à Cloudinary. Vérifiez votre connexion internet.');
+          }
+          const delay = 1000 * attemptMulti;
+          console.log(`   Attente de ${delay}ms avant prochaine tentative de ce fichier...`);
+          await wait(delay);
+          continue;
+        }
+      }
 
       results.push(response.data.secure_url || response.data.url);
     } catch (error) {
