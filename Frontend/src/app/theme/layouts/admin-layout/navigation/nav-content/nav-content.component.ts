@@ -54,7 +54,7 @@ export class NavContentComponent implements OnInit {
   navigations: NavigationItem[];
 
   // version
-  title = 'MallCConnect';
+  title = 'MallConnect';
   currentApplicationVersion = environment.appVersion;
 
   navigation: NavigationItem[] = [];
