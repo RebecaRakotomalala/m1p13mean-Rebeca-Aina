@@ -109,11 +109,16 @@ exports.updateProfile = async (req, res) => {
 // Obtenir tous les utilisateurs (admin)
 exports.getAllUsers = async (req, res) => {
   try {
-    const users = await authService.getAllUsers();
+    const { role, search, statut, page = 1, limit = 20 } = req.query;
+    const result = await authService.getAllUsers({ role, search, statut, page, limit });
     res.json({
       success: true,
-      count: users.length,
-      users: users
+      count: result.users.length,
+      total: result.total,
+      page: result.page,
+      pages: result.pages,
+      stats: result.stats,
+      users: result.users
     });
   } catch (error) {
     res.status(500).json({

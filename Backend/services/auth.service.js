@@ -163,9 +163,57 @@ async function updateProfile(userId, updateData) {
  * Obtenir tous les utilisateurs
  * @returns {Promise<Array>} - Liste de tous les utilisateurs
  */
-async function getAllUsers() {
-  const users = await User.find().select('-mot_de_passe_hash');
-  return users;
+async function getAllUsers(filters = {}) {
+  const {
+    role,
+    search,
+    statut,
+    page = 1,
+    limit = 20
+  } = filters;
+
+  const parsedPage = Math.max(1, Number(page) || 1);
+  const parsedLimit = Math.max(1, Math.min(100, Number(limit) || 20));
+  const skip = (parsedPage - 1) * parsedLimit;
+
+  const query = {};
+  if (role) query.role = role;
+  if (statut === 'actif') query.actif = true;
+  if (statut === 'suspendu') query.actif = false;
+  if (search) {
+    query.$or = [
+      { nom: { $regex: search, $options: 'i' } },
+      { prenom: { $regex: search, $options: 'i' } },
+      { email: { $regex: search, $options: 'i' } },
+      { telephone: { $regex: search, $options: 'i' } }
+    ];
+  }
+
+  const [total, users, admins, boutiques, clients] = await Promise.all([
+    User.countDocuments(query),
+    User.find(query)
+      .select('-mot_de_passe_hash')
+      .sort({ date_creation: -1 })
+      .skip(skip)
+      .limit(parsedLimit)
+      .lean(),
+    User.countDocuments({ role: 'admin' }),
+    User.countDocuments({ role: 'boutique' }),
+    User.countDocuments({ role: 'client' })
+  ]);
+
+  return {
+    users,
+    total,
+    page: parsedPage,
+    pages: Math.ceil(total / parsedLimit),
+    stats: {
+      total: admins + boutiques + clients,
+      admins,
+      boutiques,
+      clients
+    }
+  };
 }
 
 /**

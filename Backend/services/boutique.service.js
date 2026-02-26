@@ -86,7 +86,10 @@ async function createBoutique(boutiqueData) {
  * @returns {Promise<Array>} - Liste des boutiques
  */
 async function getAllBoutiques(filters = {}) {
-  const { statut, categorie, search } = filters;
+  const { statut, categorie, search, page = 1, limit = 20 } = filters;
+  const parsedPage = Math.max(1, Number(page) || 1);
+  const parsedLimit = Math.max(1, Math.min(100, Number(limit) || 20));
+  const skip = (parsedPage - 1) * parsedLimit;
   let query = {};
 
   // Filtres optionnels
@@ -103,11 +106,22 @@ async function getAllBoutiques(filters = {}) {
     ];
   }
 
-  const boutiques = await Boutique.find(query)
-    .populate('utilisateur_id', 'email nom prenom role')
-    .sort({ date_creation: -1 });
+  const [total, boutiques] = await Promise.all([
+    Boutique.countDocuments(query),
+    Boutique.find(query)
+      .populate('utilisateur_id', 'email nom prenom role')
+      .sort({ date_creation: -1 })
+      .skip(skip)
+      .limit(parsedLimit)
+      .lean()
+  ]);
 
-  return boutiques;
+  return {
+    boutiques,
+    total,
+    page: parsedPage,
+    pages: Math.ceil(total / parsedLimit)
+  };
 }
 
 /**

@@ -9,6 +9,8 @@ import { NavBarComponent } from './nav-bar/nav-bar.component';
 import { NavigationComponent } from './navigation/navigation.component';
 import { BreadcrumbComponent } from '../../shared/components/breadcrumb/breadcrumb.component';
 import { LayoutStateService } from '../../shared/service/layout-state.service';
+import { AuthService } from '../../../services/auth.service';
+import { ApiService } from '../../../services/api.service';
 
 @Component({
   selector: 'app-admin',
@@ -18,6 +20,8 @@ import { LayoutStateService } from '../../shared/service/layout-state.service';
 })
 export class AdminLayout {
   private layoutState = inject(LayoutStateService);
+  private authService = inject(AuthService);
+  private apiService = inject(ApiService);
 
   // public props
   navCollapsed: boolean;
@@ -26,6 +30,10 @@ export class AdminLayout {
   // Constructor
   constructor() {
     this.windowWidth = window.innerWidth;
+    // Prefetch dashboard stats to reduce perceived wait on first dashboard open.
+    if (this.authService.currentUser?.role === 'admin') {
+      this.apiService.prefetchAdminDashboard({ period: '30d', groupBy: 'day' });
+    }
   }
 
   get navCollapsedMob(): boolean {

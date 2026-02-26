@@ -11,8 +11,11 @@ app.use(cors());
 app.use(bodyParser.json({ limit: '10mb' }));
 app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }));
 
+const ENABLE_REQUEST_LOGS = process.env.ENABLE_REQUEST_LOGS === 'true';
 app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+  if (ENABLE_REQUEST_LOGS) {
+    console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+  }
   next();
 });
 

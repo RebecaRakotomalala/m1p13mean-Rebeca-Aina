@@ -98,6 +98,7 @@ avisSchema.index({ produit_id: 1 });
 avisSchema.index({ boutique_id: 1 });
 avisSchema.index({ note: 1 });
 avisSchema.index({ date_creation: -1 });
+avisSchema.index({ signale: 1, approuve: 1, date_creation: -1 });
 
 module.exports = mongoose.model('Avis', avisSchema, 'avis');
 
