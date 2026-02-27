@@ -4,7 +4,7 @@ services:
     runtime: node
     rootDir: .
     plan: free
-    buildCommand: cd Frontend && npm ci --legacy-peer-deps && API_URL=/api npm run build:render && cd ../Backend && npm ci
+    buildCommand: cd Frontend && npm ci --legacy-peer-deps --include=dev && API_URL=/api npm run build:render && cd ../Backend && npm ci --omit=dev
     startCommand: cd Backend && npm start
     healthCheckPath: /api/health
     envVars:

@@ -20,7 +20,7 @@ Le fichier `render.yaml` cree un seul service web:
 - Demarrage Express dans `Backend/`
 - Frontend servi par Express sur le meme domaine
 - API exposee sous `/api`
-- Le build frontend utilise `--legacy-peer-deps` pour eviter les conflits peer npm sur Render
+- Le build frontend utilise `--legacy-peer-deps --include=dev` pour eviter les conflits peer npm et installer `ng` sur Render
 
 Variables Render a renseigner:
 - `MONGODB_URI` -> ta chaine Atlas
