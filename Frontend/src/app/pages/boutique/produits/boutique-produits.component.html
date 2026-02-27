@@ -177,13 +177,47 @@
             </div>
             
             <div class="col-md-4 mb-3">
-              <label class="form-label">Prix promotionnel (Ar)</label>
-              <input type="number" class="form-control" [(ngModel)]="form.prix_promo" min="0" step="100" />
-            </div>
-            
-            <div class="col-md-4 mb-3">
               <label class="form-label">Stock</label>
               <input type="number" class="form-control" [(ngModel)]="form.stock_quantite" min="0" />
+            </div>
+
+            <!-- Gestion promotion -->
+            <div class="col-12 mb-3">
+              <div class="border rounded-3 p-3 bg-light-subtle">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                  <h6 class="mb-0">Promotion</h6>
+                  <div class="form-check form-switch m-0">
+                    <input class="form-check-input" type="checkbox" id="promo-enabled" [(ngModel)]="promoEnabled" (ngModelChange)="onPromoToggle()" />
+                    <label class="form-check-label ms-1" for="promo-enabled">
+                      {{ promoEnabled ? 'Activée' : 'Désactivée' }}
+                    </label>
+                  </div>
+                </div>
+
+                @if (promoEnabled) {
+                  <div class="row g-3">
+                    <div class="col-md-4">
+                      <label class="form-label">Prix promotionnel (Ar) *</label>
+                      <input type="number" class="form-control" [(ngModel)]="form.prix_promo" min="0" step="100" />
+                    </div>
+                    <div class="col-md-4">
+                      <label class="form-label">Début promo</label>
+                      <input type="date" class="form-control" [(ngModel)]="form.date_debut_promo" />
+                    </div>
+                    <div class="col-md-4">
+                      <label class="form-label">Fin promo</label>
+                      <input type="date" class="form-control" [(ngModel)]="form.date_fin_promo" />
+                    </div>
+                  </div>
+                  <div class="mt-2">
+                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle">
+                      Réduction estimée: {{ getCalculatedReduction() }}%
+                    </span>
+                  </div>
+                } @else {
+                  <small class="text-muted">Activez la promotion pour définir un prix promo et une période.</small>
+                }
+              </div>
             </div>
             
             <div class="col-md-6 mb-3">

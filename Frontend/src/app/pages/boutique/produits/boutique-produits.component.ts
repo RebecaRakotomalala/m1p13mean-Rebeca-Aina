@@ -26,6 +26,9 @@ interface Produit {
   sous_categorie?: string;
   prix_initial: number;
   prix_promo?: number;
+  pourcentage_reduction?: number;
+  date_debut_promo?: string;
+  date_fin_promo?: string;
   stock_quantite: number;
   stock_illimite?: boolean;
   description_courte?: string;
@@ -95,6 +98,7 @@ export class BoutiqueProduitsComponent implements OnInit {
   // Modal détails
   selectedProduit: Produit | null = null;
   showDetailsModal = false;
+  promoEnabled = false;
   
   // Catégories uniques pour le filtre
   categories: string[] = [];
@@ -109,6 +113,9 @@ export class BoutiqueProduitsComponent implements OnInit {
     sous_categorie: '',
     prix_initial: 0,
     prix_promo: undefined,
+    pourcentage_reduction: undefined,
+    date_debut_promo: '',
+    date_fin_promo: '',
     stock_quantite: 0,
     stock_illimite: false,
     description_courte: '',
@@ -245,6 +252,9 @@ export class BoutiqueProduitsComponent implements OnInit {
       sous_categorie: '',
       prix_initial: 0,
       prix_promo: undefined,
+      pourcentage_reduction: undefined,
+      date_debut_promo: '',
+      date_fin_promo: '',
       stock_quantite: 0,
       stock_illimite: false,
       description_courte: '',
@@ -254,6 +264,7 @@ export class BoutiqueProduitsComponent implements OnInit {
       nouveau: false,
       coup_de_coeur: false
     };
+    this.promoEnabled = false;
     if (this.imageInput) {
       this.imageInput.nativeElement.value = '';
     }
@@ -263,6 +274,23 @@ export class BoutiqueProduitsComponent implements OnInit {
     this.editingProduit = p;
     this.showForm = true;
     this.form = { ...p };
+    this.promoEnabled = !!p.prix_promo;
+  }
+
+  onPromoToggle(): void {
+    if (!this.promoEnabled) {
+      this.form.prix_promo = undefined;
+      this.form.pourcentage_reduction = undefined;
+      this.form.date_debut_promo = '';
+      this.form.date_fin_promo = '';
+    }
+  }
+
+  getCalculatedReduction(): number {
+    const prixInitial = Number(this.form.prix_initial || 0);
+    const prixPromo = Number(this.form.prix_promo || 0);
+    if (!prixInitial || !prixPromo || prixPromo >= prixInitial) return 0;
+    return Math.round(((prixInitial - prixPromo) / prixInitial) * 100);
   }
 
   onImageSelected(event: Event): void {
@@ -313,6 +341,36 @@ export class BoutiqueProduitsComponent implements OnInit {
       this.errorMessage = 'Le prix doit être supérieur à 0';
       this.notificationService.warning('Le prix doit être supérieur à 0');
       return;
+    }
+
+    if (this.promoEnabled) {
+      const prixPromo = Number(this.form.prix_promo);
+      const prixInitial = Number(this.form.prix_initial);
+      if (!this.form.prix_promo || isNaN(prixPromo)) {
+        this.errorMessage = 'Le prix promotionnel est requis si la promotion est activée';
+        this.notificationService.warning(this.errorMessage);
+        return;
+      }
+      if (prixPromo <= 0 || prixPromo >= prixInitial) {
+        this.errorMessage = 'Le prix promotionnel doit être > 0 et inférieur au prix initial';
+        this.notificationService.warning(this.errorMessage);
+        return;
+      }
+      if (this.form.date_debut_promo && this.form.date_fin_promo) {
+        const debut = new Date(this.form.date_debut_promo);
+        const fin = new Date(this.form.date_fin_promo);
+        if (debut > fin) {
+          this.errorMessage = 'La date de fin promo doit être après la date de début';
+          this.notificationService.warning(this.errorMessage);
+          return;
+        }
+      }
+      this.form.pourcentage_reduction = this.getCalculatedReduction();
+    } else {
+      this.form.prix_promo = undefined;
+      this.form.pourcentage_reduction = undefined;
+      this.form.date_debut_promo = '';
+      this.form.date_fin_promo = '';
     }
 
     this.loading = true;

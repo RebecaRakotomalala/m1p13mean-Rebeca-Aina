@@ -174,7 +174,7 @@ export class BoutiqueDashboardComponent implements OnInit {
         toolbar: { show: false },
         background: 'transparent',
         animations: {
-          enabled: true,
+          enabled: false,
           speed: 800
         }
       },
@@ -234,7 +234,7 @@ export class BoutiqueDashboardComponent implements OnInit {
         type: 'donut',
         height: 350,
         animations: {
-          enabled: true,
+          enabled: false,
           speed: 800
         }
       },
@@ -291,7 +291,7 @@ export class BoutiqueDashboardComponent implements OnInit {
         toolbar: { show: false },
         background: 'transparent',
         animations: {
-          enabled: true,
+          enabled: false,
           speed: 800
         }
       },
