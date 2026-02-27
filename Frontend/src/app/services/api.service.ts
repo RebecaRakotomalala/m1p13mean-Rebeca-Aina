@@ -2,10 +2,11 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
+import { environment } from '../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
-  private baseUrl = 'http://localhost:3000/api';
+  private baseUrl = environment.apiUrl;
   private adminDashboardCacheTtlMs = 30000;
   private adminDashboardMemoryCache = new Map<string, { ts: number; data: any }>();
   private adminDashboardStoragePrefix = 'admin_dashboard_cache::';

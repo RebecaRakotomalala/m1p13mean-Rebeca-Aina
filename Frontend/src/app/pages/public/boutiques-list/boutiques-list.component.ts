@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../../environments/environment';
 
 interface Boutique {
   _id: string;
@@ -31,6 +32,7 @@ interface Boutique {
 export class BoutiquesListComponent implements OnInit {
   private http = inject(HttpClient);
   private cdr = inject(ChangeDetectorRef);
+  private apiUrl = environment.apiUrl;
 
   boutiques: Boutique[] = [];
   filteredBoutiques: Boutique[] = [];
@@ -42,7 +44,7 @@ export class BoutiquesListComponent implements OnInit {
   sortBy: 'nom' | 'note' | 'recent' = 'nom';
 
   ngOnInit(): void {
-    this.http.get<any>('http://localhost:3000/api/boutiques').subscribe({
+    this.http.get<any>(`${this.apiUrl}/boutiques`).subscribe({
       next: (res) => {
         this.loading = false;
         if (res.success) {

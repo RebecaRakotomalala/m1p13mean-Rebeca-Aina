@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-boutique-detail',
@@ -15,6 +16,7 @@ export class BoutiqueDetailComponent implements OnInit {
   private http = inject(HttpClient);
   private cdr = inject(ChangeDetectorRef);
   private route = inject(ActivatedRoute);
+  private apiUrl = environment.apiUrl;
 
   boutique: any = null;
   produits: any[] = [];
@@ -30,7 +32,7 @@ export class BoutiqueDetailComponent implements OnInit {
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
-      this.http.get<any>(`http://localhost:3000/api/boutiques/${id}`).subscribe({
+      this.http.get<any>(`${this.apiUrl}/boutiques/${id}`).subscribe({
         next: (res) => {
           this.loading = false;
           if (res.success) this.boutique = res.boutique;
@@ -41,7 +43,7 @@ export class BoutiqueDetailComponent implements OnInit {
           this.cdr.detectChanges();
         }
       });
-      this.http.get<any>(`http://localhost:3000/api/produits/boutique/${id}`).subscribe({
+      this.http.get<any>(`${this.apiUrl}/produits/boutique/${id}`).subscribe({
         next: (res) => {
           this.produitsLoading = false;
           if (res.success) {

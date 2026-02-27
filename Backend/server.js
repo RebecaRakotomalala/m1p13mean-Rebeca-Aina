@@ -3,6 +3,8 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const bodyParser = require('body-parser');
+const path = require('path');
+const fs = require('fs');
 
 const app = express();
 
@@ -22,6 +24,8 @@ app.use((req, res, next) => {
 // CONFIGURATION
 const PORT = process.env.PORT || 3000;
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/mall';
+const FRONTEND_DIST_PATH = path.resolve(__dirname, '../Frontend/dist');
+const HAS_FRONTEND_BUILD = fs.existsSync(path.join(FRONTEND_DIST_PATH, 'index.html'));
 
 // CONNEXION MONGODB
 mongoose.connect(MONGODB_URI, {
@@ -41,8 +45,8 @@ mongoose.connection.on('error', (err) => {
   console.error('Erreur MongoDB:', err.message);
 });
 
-// ROUTE RACINE
-app.get('/', (req, res) => {
+// ROUTE API RACINE
+app.get('/api', (req, res) => {
   res.json({
     message: 'MallConnect API',
     status: 'OK',
@@ -59,6 +63,10 @@ app.get('/', (req, res) => {
       evenements: '/api/evenements'
     }
   });
+});
+
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ success: true, status: 'ok' });
 });
 
 // ROUTES
@@ -87,6 +95,13 @@ app.use('/api/favoris', favoriRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/evenements', evenementRoutes);
 app.use('/api/home', homeRoutes);
+
+if (HAS_FRONTEND_BUILD) {
+  app.use(express.static(FRONTEND_DIST_PATH));
+  app.get(/^\/(?!api).*/, (req, res) => {
+    res.sendFile(path.join(FRONTEND_DIST_PATH, 'index.html'));
+  });
+}
 
 // GESTION ERREURS
 app.use((req, res) => {

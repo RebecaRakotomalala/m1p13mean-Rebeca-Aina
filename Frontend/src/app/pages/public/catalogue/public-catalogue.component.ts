@@ -5,6 +5,7 @@ import { RouterModule, Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { ApiService } from '../../../services/api.service';
 import { AuthService } from '../../../services/auth.service';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-public-catalogue',
@@ -19,6 +20,7 @@ export class PublicCatalogueComponent implements OnInit {
   private cdr = inject(ChangeDetectorRef);
   private auth = inject(AuthService);
   private router = inject(Router);
+  private apiUrl = environment.apiUrl;
 
   produits: any[] = [];
   search = '';
@@ -45,7 +47,7 @@ export class PublicCatalogueComponent implements OnInit {
 
   loadCategories(): void {
     // Load all products briefly to extract categories
-    this.http.get<any>('http://localhost:3000/api/produits?limit=500').subscribe({
+    this.http.get<any>(`${this.apiUrl}/produits?limit=500`).subscribe({
       next: (res) => {
         if (res.success && res.produits) {
           const cats = new Set<string>();
@@ -59,7 +61,7 @@ export class PublicCatalogueComponent implements OnInit {
 
   loadProduits(): void {
     this.loading = true;
-    let url = `http://localhost:3000/api/produits?page=${this.currentPage}&limit=12`;
+    let url = `${this.apiUrl}/produits?page=${this.currentPage}&limit=12`;
     if (this.search) url += `&search=${encodeURIComponent(this.search)}`;
     if (this.sortBy) url += `&sort_by=${this.sortBy}`;
     if (this.minPrix) url += `&min_prix=${this.minPrix}`;

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { AuthService } from '../../../services/auth.service';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-home',
@@ -15,6 +16,7 @@ export class HomeComponent implements OnInit {
   private http = inject(HttpClient);
   private cdr = inject(ChangeDetectorRef);
   private authService = inject(AuthService);
+  private apiUrl = environment.apiUrl;
 
   stats = { boutiques: 0, produits: 0, clients: 0, commandes: 0, categories: 0 };
   loading = true;
@@ -31,7 +33,7 @@ export class HomeComponent implements OnInit {
   }
 
   loadStats(): void {
-    this.http.get<any>('http://localhost:3000/api/home/stats').subscribe({
+    this.http.get<any>(`${this.apiUrl}/home/stats`).subscribe({
       next: (res) => {
         this.loading = false;
         if (res.success) {

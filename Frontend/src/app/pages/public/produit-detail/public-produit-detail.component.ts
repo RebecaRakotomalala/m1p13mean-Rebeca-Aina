@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterModule, Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { AuthService } from '../../../services/auth.service';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-public-produit-detail',
@@ -19,7 +20,7 @@ export class PublicProduitDetailComponent implements OnInit {
   private cdr = inject(ChangeDetectorRef);
   private auth = inject(AuthService);
 
-  private apiUrl = 'http://localhost:3000/api';
+  private apiUrl = environment.apiUrl;
 
   produit: any = null;
   avis: any[] = [];

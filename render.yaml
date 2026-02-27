@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: mallconnect-app
+    runtime: node
+    rootDir: .
+    plan: free
+    buildCommand: cd Frontend && npm ci --legacy-peer-deps && API_URL=/api npm run build:render && cd ../Backend && npm ci
+    startCommand: cd Backend && npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: ENABLE_REQUEST_LOGS
+        value: "false"
