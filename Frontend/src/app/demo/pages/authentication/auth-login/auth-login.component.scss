@@ -190,6 +190,42 @@
   color: #8c8c8c;
 }
 
+.auth-quick-login {
+  margin-bottom: 18px;
+}
+
+.quick-login-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #7d8496;
+  margin-bottom: 8px;
+}
+
+.quick-login-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.quick-login-btn {
+  border: 1px solid #dfe3f2;
+  background: #f7f8ff;
+  color: #4a5580;
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: #667eea;
+    color: #667eea;
+    background: #eef1ff;
+  }
+}
+
 // Alert
 .auth-alert {
   display: flex;
