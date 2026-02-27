@@ -1,13 +1,11 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-const apiUrl = process.env.API_URL;
+const apiUrl = process.env.API_URL || '/api';
 const envFilePath = path.resolve(process.cwd(), 'src/environments/environment.prod.ts');
 
-if (!apiUrl) {
-  console.error('[render-set-api-url] Missing API_URL environment variable.');
-  console.error('[render-set-api-url] Example: https://mallconnect-backend.onrender.com/api');
-  process.exit(1);
+if (!process.env.API_URL) {
+  console.warn('[render-set-api-url] API_URL not set, using default "/api".');
 }
 
 const currentFile = fs.readFileSync(envFilePath, 'utf8');
