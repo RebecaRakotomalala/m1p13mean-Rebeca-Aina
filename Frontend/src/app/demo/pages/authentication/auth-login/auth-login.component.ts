@@ -20,6 +20,17 @@ export class AuthLoginComponent {
 
   constructor(private authService: AuthService, private router: Router) {}
 
+  fillTestCredentials(role: 'admin' | 'boutique' | 'client'): void {
+    const presets = {
+      admin: { email: 'admin@mallconnect.mg', password: 'admin123' },
+      boutique: { email: 'cosmetique@boutique.mg', password: 'boutique123' },
+      client: { email: 'client@test.mg', password: 'client123' }
+    };
+    this.email = presets[role].email;
+    this.password = presets[role].password;
+    this.errorMessage = '';
+  }
+
   onLogin(): void {
     if (!this.email || !this.password) {
       this.errorMessage = 'Veuillez remplir tous les champs';
