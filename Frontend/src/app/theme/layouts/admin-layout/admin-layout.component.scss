@@ -12,6 +12,7 @@
   .pc-container {
     background: var(--mc-bg-soft);
     min-height: 100vh;
+    padding-bottom: 72px;
   }
 
   .coded-wrapper,
@@ -160,6 +161,24 @@
   .pc-footer {
     border-top: 1px solid var(--mc-border);
     background: #fff;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1030;
+    box-shadow: 0 -4px 18px rgba(26, 26, 46, 0.08);
+  }
+
+  .pc-footer .footer-bottom {
+    padding: 10px 16px;
+  }
+
+  .pc-footer .footer-bottom-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
   }
 
   .pc-footer p,
