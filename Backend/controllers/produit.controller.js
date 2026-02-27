@@ -69,7 +69,8 @@ exports.getAllProduits = async (req, res) => {
       .populate('boutique_id', 'nom slug logo_url')
       .sort(sortOption)
       .skip(skip)
-      .limit(Number(limit));
+      .limit(Number(limit))
+      .lean();
 
     res.json({ success: true, count: produits.length, total, page: Number(page), pages: Math.ceil(total / Number(limit)), produits });
   } catch (error) {
@@ -96,7 +97,8 @@ exports.getProduitsByBoutique = async (req, res) => {
   try {
     const produits = await Produit.find({ boutique_id: req.params.boutiqueId, actif: true })
       .populate('boutique_id', 'nom slug logo_url')
-      .sort({ date_creation: -1 });
+      .sort({ date_creation: -1 })
+      .lean();
     res.json({ success: true, count: produits.length, produits });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Erreur recuperation produits boutique', error: error.message });
@@ -139,12 +141,36 @@ exports.deleteProduit = async (req, res) => {
 // Mes produits (boutique owner)
 exports.getMyProduits = async (req, res) => {
   try {
-    const boutiques = await Boutique.find({ utilisateur_id: req.user._id });
+    const hasPagination = req.query.page !== undefined || req.query.limit !== undefined;
+    const page = Math.max(1, Number(req.query.page) || 1);
+    const limit = Math.max(1, Math.min(200, Number(req.query.limit) || 30));
+    const skip = (page - 1) * limit;
+
+    const boutiques = await Boutique.find({ utilisateur_id: req.user._id }).select('_id').lean();
     const boutiqueIds = boutiques.map(b => b._id);
-    const produits = await Produit.find({ boutique_id: { $in: boutiqueIds } })
+    const query = { boutique_id: { $in: boutiqueIds } };
+
+    const total = await Produit.countDocuments(query);
+    let findQuery = Produit.find(query)
+      .select('nom slug categorie prix_initial prix_promo prix_achat stock_quantite stock_seuil_alerte actif image_principale nombre_vues nombre_ventes date_creation boutique_id')
       .populate('boutique_id', 'nom slug logo_url')
-      .sort({ date_creation: -1 });
-    res.json({ success: true, count: produits.length, produits });
+      .sort({ date_creation: -1 })
+      .lean();
+
+    if (hasPagination) {
+      findQuery = findQuery.skip(skip).limit(limit);
+    }
+
+    const produits = await findQuery;
+
+    res.json({
+      success: true,
+      count: produits.length,
+      total,
+      page,
+      pages: hasPagination ? Math.ceil(total / limit) : 1,
+      produits
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Erreur recuperation mes produits', error: error.message });
   }

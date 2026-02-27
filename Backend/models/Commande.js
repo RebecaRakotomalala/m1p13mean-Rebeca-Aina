@@ -142,6 +142,7 @@ commandeSchema.index({ client_id: 1 });
 commandeSchema.index({ numero_commande: 1 });
 commandeSchema.index({ statut: 1 });
 commandeSchema.index({ date_creation: -1 });
+commandeSchema.index({ client_id: 1, date_creation: -1 });
 commandeSchema.index({ statut: 1, date_creation: -1 });
 
 module.exports = mongoose.model('Commande', commandeSchema, 'commandes');

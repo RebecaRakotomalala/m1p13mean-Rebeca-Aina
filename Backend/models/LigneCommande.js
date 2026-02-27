@@ -65,6 +65,8 @@ ligneCommandeSchema.index({ commande_id: 1 });
 ligneCommandeSchema.index({ boutique_id: 1 });
 ligneCommandeSchema.index({ produit_id: 1 });
 ligneCommandeSchema.index({ boutique_id: 1, date_creation: -1 });
+ligneCommandeSchema.index({ boutique_id: 1, commande_id: 1 });
+ligneCommandeSchema.index({ boutique_id: 1, produit_id: 1 });
 ligneCommandeSchema.index({ date_creation: -1 });
 
 module.exports = mongoose.model('LigneCommande', ligneCommandeSchema, 'lignes_commandes');
