@@ -2,14 +2,25 @@
  * Script de seed pour initialiser la base de donnees avec des donnees de test
  * Usage: node scripts/seed.js
  */
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
+
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
+
+// Importer les modèles
 const User = require('../models/User');
 const Boutique = require('../models/Boutique');
 const Produit = require('../models/Produit');
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/mall';
+const MONGODB_URI = process.env.MONGODB_URI;
+
+if (!MONGODB_URI) {
+  console.error("❌ MONGO_URI non definie dans .env !");
+  process.exit(1);
+}
+
+console.log('URI utilisée:', MONGODB_URI);
 
 async function seed() {
   try {

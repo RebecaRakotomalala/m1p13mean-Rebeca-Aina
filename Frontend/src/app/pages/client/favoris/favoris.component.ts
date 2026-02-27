@@ -1,63 +1,82 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { FormsModule } from '@angular/forms';
+import { RouterModule, Router } from '@angular/router';
 import { ApiService } from '../../../services/api.service';
-import { CardComponent } from '../../../theme/shared/components/card/card.component';
 
 @Component({
   selector: 'app-favoris',
-  imports: [CommonModule, RouterModule, CardComponent],
-  template: `
-    <app-card cardTitle="Mes Favoris">
-      <div class="row">
-        <div class="col-md-4 col-lg-3 mb-4" *ngFor="let f of favoris">
-          <div class="card h-100">
-            <div *ngIf="f.type === 'produit' && f.produit_id">
-              <img [src]="f.produit_id.image_principale || 'assets/images/authentication/img-placeholder.svg'" class="card-img-top" style="height:180px;object-fit:cover;" />
-              <div class="card-body">
-                <h6 class="card-title">{{ f.produit_id.nom }}</h6>
-                <strong class="text-primary">{{ (f.produit_id.prix_promo || f.produit_id.prix_initial) | number:'1.0-0' }} Ar</strong>
-                <div class="mt-2">
-                  <a [routerLink]="['/client/produit', f.produit_id._id]" class="btn btn-sm btn-outline-primary me-1">Voir</a>
-                  <button class="btn btn-sm btn-outline-danger" (click)="removeFavori(f)">Retirer</button>
-                </div>
-              </div>
-            </div>
-            <div *ngIf="f.type === 'boutique' && f.boutique_id" class="card-body">
-              <h6 class="card-title">{{ f.boutique_id.nom }}</h6>
-              <p class="text-muted small">{{ f.boutique_id.categorie_principale }}</p>
-              <span class="text-warning" *ngIf="f.boutique_id.note_moyenne">{{ f.boutique_id.note_moyenne | number:'1.1-1' }} ★</span>
-              <div class="mt-2">
-                <button class="btn btn-sm btn-outline-danger" (click)="removeFavori(f)">Retirer</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div *ngIf="favoris.length === 0" class="text-center text-muted py-5">
-        <h5>Aucun favori</h5>
-        <p>Explorez le catalogue et ajoutez des produits en favoris !</p>
-      </div>
-    </app-card>
-  `
+  imports: [CommonModule, FormsModule, RouterModule],
+  templateUrl: './favoris.component.html',
+  styleUrls: ['./favoris.component.scss']
 })
 export class FavorisComponent implements OnInit {
   favoris: any[] = [];
+  loading = true;
+  filterType = '';
+  removingIds: Set<string> = new Set();
 
-  constructor(private api: ApiService) {}
+  constructor(private api: ApiService, private router: Router) {}
 
   ngOnInit(): void { this.loadFavoris(); }
 
   loadFavoris(): void {
+    this.loading = true;
     this.api.getMyFavoris().subscribe({
-      next: (res) => { if (res.success) this.favoris = res.favoris; },
-      error: (err) => console.error(err)
+      next: (res) => {
+        if (res.success) this.favoris = res.favoris;
+        this.loading = false;
+      },
+      error: (err) => {
+        console.error(err);
+        this.loading = false;
+      }
     });
   }
 
+  get favorisFiltres(): any[] {
+    if (!this.filterType) return this.favoris;
+    return this.favoris.filter(f => f.type === this.filterType);
+  }
+
+  get stats() {
+    const total = this.favoris.length;
+    const produits = this.favoris.filter(f => f.type === 'produit').length;
+    const boutiques = this.favoris.filter(f => f.type === 'boutique').length;
+    return { total, produits, boutiques };
+  }
+
   removeFavori(f: any): void {
+    const id = f._id;
+    this.removingIds.add(id);
     this.api.toggleFavori(f.type, f.produit_id?._id, f.boutique_id?._id).subscribe({
-      next: () => this.loadFavoris()
+      next: () => {
+        this.removingIds.delete(id);
+        this.favoris = this.favoris.filter(fav => fav._id !== id);
+      },
+      error: () => {
+        this.removingIds.delete(id);
+      }
     });
+  }
+
+  isRemoving(id: string): boolean {
+    return this.removingIds.has(id);
+  }
+
+  getDiscount(p: any): number {
+    if (!p?.prix_promo || !p?.prix_initial || p.prix_promo >= p.prix_initial) return 0;
+    return Math.round((1 - p.prix_promo / p.prix_initial) * 100);
+  }
+
+  addToCart(produitId: string): void {
+    this.api.addToPanier(produitId, 1).subscribe({
+      next: () => {},
+      error: (err) => alert(err.error?.message || 'Erreur')
+    });
+  }
+
+  goToCatalogue(): void {
+    this.router.navigate(['/catalogue']);
   }
 }

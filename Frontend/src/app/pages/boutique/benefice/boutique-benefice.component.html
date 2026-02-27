@@ -1,0 +1,382 @@
+<!-- Loading -->
+@if (loading) {
+  <div class="text-center py-5">
+    <div class="spinner-border text-primary spinner-border-lg" role="status"></div>
+    <p class="mt-3 text-muted">Chargement des données de bénéfice...</p>
+  </div>
+}
+
+@if (!loading) {
+  <!-- Alerte si peu de prix d'achat renseignés -->
+  @if (nbProduitsAvecPrixAchat < nbProduits) {
+    <div class="alert alert-warning d-flex align-items-center gap-2 mb-4 fade-in animated">
+      <i antIcon type="warning" theme="outline" style="font-size: 20px;"></i>
+      <div>
+        <strong>{{ nbProduitsAvecPrixAchat }}/{{ nbProduits }}</strong> produits ont un prix d'achat renseigné.
+        <a routerLink="/boutique/stock" class="alert-link">Importez un CSV de prix d'achat</a> dans la page Stock pour des calculs plus précis.
+      </div>
+    </div>
+  }
+
+  <!-- 🔝 Stats rapides -->
+  <div class="row mb-4">
+    <div class="col-md-6 col-xl-3 mb-3 fade-in animated">
+      <div class="stat-card stat-card-primary">
+        <div class="stat-card-body">
+          <div class="stat-icon-wrapper stat-icon-primary">
+            <i antIcon type="shopping-cart" theme="outline" class="stat-icon-i"></i>
+          </div>
+          <div class="stat-info">
+            <span class="stat-value">{{ totalCA | number:'1.0-0' }}</span>
+            <span class="stat-label">Chiffre d'affaires (Ar)</span>
+            <span class="stat-sub">Total des ventes</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6 col-xl-3 mb-3 fade-in animated" style="animation-delay: 100ms">
+      <div class="stat-card stat-card-danger">
+        <div class="stat-card-body">
+          <div class="stat-icon-wrapper stat-icon-danger">
+            <i antIcon type="fall" theme="outline" class="stat-icon-i"></i>
+          </div>
+          <div class="stat-info">
+            <span class="stat-value text-danger">{{ totalCout | number:'1.0-0' }}</span>
+            <span class="stat-label">Coût total (Ar)</span>
+            <span class="stat-sub">Prix d'achat × quantités</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6 col-xl-3 mb-3 fade-in animated" style="animation-delay: 200ms">
+      <div class="stat-card stat-card-success">
+        <div class="stat-card-body">
+          <div class="stat-icon-wrapper stat-icon-success">
+            <i antIcon type="rise" theme="outline" class="stat-icon-i"></i>
+          </div>
+          <div class="stat-info">
+            <span class="stat-value" [ngClass]="totalBenefice >= 0 ? 'text-success' : 'text-danger'">
+              {{ totalBenefice | number:'1.0-0' }}
+            </span>
+            <span class="stat-label">Bénéfice net (Ar)</span>
+            <span class="stat-sub">CA - Coût d'achat</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6 col-xl-3 mb-3 fade-in animated" style="animation-delay: 300ms">
+      <div class="stat-card stat-card-warning">
+        <div class="stat-card-body">
+          <div class="stat-icon-wrapper stat-icon-warning">
+            <i antIcon type="percentage" theme="outline" class="stat-icon-i"></i>
+          </div>
+          <div class="stat-info">
+            <span class="stat-value text-warning">{{ margeMoyenne | number:'1.1-1' }}%</span>
+            <span class="stat-label">Marge moyenne</span>
+            <span class="stat-sub">Rentabilité globale</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Valeur stock info -->
+  <div class="row mb-4 fade-in animated" style="animation-delay: 350ms">
+    <div class="col-md-4 mb-3">
+      <div class="info-card">
+        <div class="info-card-icon bg-blue-light">
+          <i antIcon type="container" theme="outline"></i>
+        </div>
+        <div>
+          <div class="info-card-value">{{ valeurStockAchat | number:'1.0-0' }} Ar</div>
+          <div class="info-card-label">Valeur stock (achat)</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4 mb-3">
+      <div class="info-card">
+        <div class="info-card-icon bg-green-light">
+          <i antIcon type="account-book" theme="outline"></i>
+        </div>
+        <div>
+          <div class="info-card-value">{{ valeurStockVente | number:'1.0-0' }} Ar</div>
+          <div class="info-card-label">Valeur stock (vente)</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4 mb-3">
+      <div class="info-card">
+        <div class="info-card-icon bg-purple-light">
+          <i antIcon type="rise" theme="outline"></i>
+        </div>
+        <div>
+          <div class="info-card-value">{{ beneficePotentielStock | number:'1.0-0' }} Ar</div>
+          <div class="info-card-label">Bénéfice potentiel du stock</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Graphiques -->
+  <div class="row mb-4">
+    <div class="col-lg-7 mb-3 slide-in-left animated">
+      <app-card cardTitle="📊 Évolution CA / Coût / Bénéfice (6 mois)">
+        @if (evolutionChartOptions) {
+          <apx-chart
+            [series]="$any(evolutionChartOptions.series)"
+            [chart]="$any(evolutionChartOptions.chart)"
+            [plotOptions]="$any(evolutionChartOptions.plotOptions)"
+            [colors]="$any(evolutionChartOptions.colors)"
+            [xaxis]="$any(evolutionChartOptions.xaxis)"
+            [yaxis]="$any(evolutionChartOptions.yaxis)"
+            [grid]="$any(evolutionChartOptions.grid)"
+            [dataLabels]="$any(evolutionChartOptions.dataLabels)"
+            [tooltip]="$any(evolutionChartOptions.tooltip)"
+            [legend]="$any(evolutionChartOptions.legend)"
+          ></apx-chart>
+        } @else {
+          <div class="text-center text-muted py-5">Aucune donnée de vente</div>
+        }
+      </app-card>
+    </div>
+
+    <div class="col-lg-5 mb-3 slide-in-right animated">
+      <app-card cardTitle="🍩 Bénéfice par catégorie">
+        @if (categorieChartOptions) {
+          <apx-chart
+            [series]="$any(categorieChartOptions.series)"
+            [chart]="$any(categorieChartOptions.chart)"
+            [labels]="$any(categorieChartOptions.labels)"
+            [colors]="$any(categorieChartOptions.colors)"
+            [plotOptions]="$any(categorieChartOptions.plotOptions)"
+            [legend]="$any(categorieChartOptions.legend)"
+            [tooltip]="$any(categorieChartOptions.tooltip)"
+          ></apx-chart>
+        } @else {
+          <div class="text-center text-muted py-5">Aucune donnée par catégorie</div>
+        }
+      </app-card>
+    </div>
+  </div>
+
+  <!-- Top produits bénéfice -->
+  @if (topProduitsChartOptions) {
+    <div class="row mb-4">
+      <div class="col-12 slide-in-up animated">
+        <app-card cardTitle="🏆 Top 10 produits les plus rentables">
+          <apx-chart
+            [series]="$any(topProduitsChartOptions.series)"
+            [chart]="$any(topProduitsChartOptions.chart)"
+            [plotOptions]="$any(topProduitsChartOptions.plotOptions)"
+            [colors]="$any(topProduitsChartOptions.colors)"
+            [xaxis]="$any(topProduitsChartOptions.xaxis)"
+            [dataLabels]="$any(topProduitsChartOptions.dataLabels)"
+            [grid]="$any(topProduitsChartOptions.grid)"
+            [tooltip]="$any(topProduitsChartOptions.tooltip)"
+          ></apx-chart>
+        </app-card>
+      </div>
+    </div>
+  }
+
+  <!-- Filtres tableau -->
+  <app-card class="slide-in-up animated">
+    <div class="row g-3 align-items-end">
+      <div class="col-md-3">
+        <label class="form-label fw-semibold">
+          <i antIcon type="search" theme="outline" class="me-1"></i> Rechercher
+        </label>
+        <input type="text" class="form-control" placeholder="Nom du produit..."
+          [(ngModel)]="searchTerm" (ngModelChange)="applyFilters()">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label fw-semibold">
+          <i antIcon type="filter" theme="outline" class="me-1"></i> Catégorie
+        </label>
+        <select class="form-select" [(ngModel)]="filterCategorie" (ngModelChange)="applyFilters()">
+          <option value="">Toutes</option>
+          @for (cat of categories; track cat) {
+            <option [value]="cat">{{ cat }}</option>
+          }
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label fw-semibold">Trier par</label>
+        <select class="form-select" [(ngModel)]="sortBy" (ngModelChange)="applyFilters()">
+          <option value="benefice">Bénéfice</option>
+          <option value="marge">Marge (%)</option>
+          <option value="ca">Chiffre d'affaires</option>
+          <option value="ventes">Quantité vendue</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <button class="btn btn-outline-primary w-100" (click)="loadData()">
+          <i antIcon type="reload" theme="outline" class="me-1"></i> Actualiser
+        </button>
+      </div>
+    </div>
+  </app-card>
+
+  <!-- Tableau détaillé des bénéfices -->
+  <app-card cardTitle="💰 Détail des bénéfices par produit ({{ produitsFiltres.length }})" class="mt-3 slide-in-up animated">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle stock-table">
+        <thead class="table-light">
+          <tr>
+            <th></th>
+            <th>Produit</th>
+            <th>Catégorie</th>
+            <th>Prix vente</th>
+            <th>Prix achat</th>
+            <th>Qté vendue</th>
+            <th>CA</th>
+            <th>Coût</th>
+            <th>Bénéfice</th>
+            <th style="width: 130px">Marge</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (p of paginatedProduits; track p._id) {
+            <tr [class.table-success-light]="p.benefice > 0 && p.marge_pct >= 30"
+                [class.table-danger-light]="p.benefice < 0">
+              <td>
+                @if (p.image) {
+                  <img [src]="p.image" [alt]="p.nom" class="product-thumb">
+                } @else {
+                  <div class="product-thumb-placeholder">
+                    <i antIcon type="container" theme="outline"></i>
+                  </div>
+                }
+              </td>
+              <td>
+                <strong>{{ p.nom }}</strong>
+                @if (p.prix_achat === 0) {
+                  <br><small class="text-warning">⚠ Prix d'achat non renseigné</small>
+                }
+              </td>
+              <td><span class="badge bg-light text-dark">{{ p.categorie }}</span></td>
+              <td>{{ p.prix_vente | number:'1.0-0' }} Ar</td>
+              <td>
+                @if (p.prix_achat > 0) {
+                  {{ p.prix_achat | number:'1.0-0' }} Ar
+                } @else {
+                  <span class="text-muted">-</span>
+                }
+              </td>
+              <td>
+                <span class="badge bg-primary bg-opacity-10 text-primary">{{ p.total_vendu }}</span>
+              </td>
+              <td>{{ p.chiffre_affaires | number:'1.0-0' }} Ar</td>
+              <td>{{ p.cout_total | number:'1.0-0' }} Ar</td>
+              <td>
+                <strong [ngClass]="getBeneficeClass(p.benefice)">
+                  @if (p.benefice > 0) { + }
+                  {{ p.benefice | number:'1.0-0' }} Ar
+                </strong>
+              </td>
+              <td>
+                <div class="d-flex align-items-center gap-2">
+                  <div class="progress flex-grow-1" style="height: 6px;">
+                    <div class="progress-bar" [ngClass]="getMargeBarColor(p.marge_pct)"
+                      [style.width.%]="getMargeBarWidth(p.marge_pct)"></div>
+                  </div>
+                  <small class="fw-bold" [ngClass]="getBeneficeClass(p.benefice)">
+                    {{ p.marge_pct | number:'1.1-1' }}%
+                  </small>
+                </div>
+              </td>
+            </tr>
+          }
+
+          @if (produitsFiltres.length === 0) {
+            <tr>
+              <td colspan="10" class="text-center py-5 text-muted">
+                <i antIcon type="line-chart" theme="outline" class="f-36 d-block mb-2"></i>
+                Aucun produit trouvé
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    @if (produitsFiltres.length > pageSize) {
+      <div class="d-flex justify-content-between align-items-center mt-3 px-2">
+        <small class="text-muted">
+          Affichage {{ (currentPage - 1) * pageSize + 1 }} - {{ currentPage * pageSize > produitsFiltres.length ? produitsFiltres.length : currentPage * pageSize }} sur {{ produitsFiltres.length }} produits
+        </small>
+        <nav>
+          <ul class="pagination pagination-sm mb-0">
+            <li class="page-item" [class.disabled]="currentPage === 1">
+              <button class="page-link" (click)="goToPage(currentPage - 1)">‹</button>
+            </li>
+            @for (page of pages; track $index) {
+              @if (page === -1) {
+                <li class="page-item disabled"><span class="page-link">…</span></li>
+              } @else {
+                <li class="page-item" [class.active]="page === currentPage">
+                  <button class="page-link" (click)="goToPage(page)">{{ page }}</button>
+                </li>
+              }
+            }
+            <li class="page-item" [class.disabled]="currentPage === totalPages">
+              <button class="page-link" (click)="goToPage(currentPage + 1)">›</button>
+            </li>
+          </ul>
+        </nav>
+      </div>
+    }
+  </app-card>
+
+  <!-- Résumé par catégorie -->
+  @if (parCategorie.length > 0) {
+    <app-card cardTitle="📋 Résumé par catégorie" class="mt-3 slide-in-up animated">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle stock-table">
+          <thead class="table-light">
+            <tr>
+              <th>Catégorie</th>
+              <th>Chiffre d'affaires</th>
+              <th>Coût d'achat</th>
+              <th>Bénéfice</th>
+              <th style="width: 200px">Marge</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (c of parCategorie; track c.categorie) {
+              <tr>
+                <td><strong>{{ c.categorie }}</strong></td>
+                <td>{{ c.chiffre_affaires | number:'1.0-0' }} Ar</td>
+                <td>{{ c.cout_total | number:'1.0-0' }} Ar</td>
+                <td>
+                  <strong [ngClass]="getBeneficeClass(c.benefice)">
+                    @if (c.benefice > 0) { + }
+                    {{ c.benefice | number:'1.0-0' }} Ar
+                  </strong>
+                </td>
+                <td>
+                  <div class="d-flex align-items-center gap-2">
+                    <div class="progress flex-grow-1" style="height: 8px;">
+                      <div class="progress-bar"
+                        [ngClass]="getMargeBarColor(c.chiffre_affaires > 0 ? (c.benefice / c.chiffre_affaires) * 100 : 0)"
+                        [style.width.%]="getMargeBarWidth(c.chiffre_affaires > 0 ? (c.benefice / c.chiffre_affaires) * 100 : 0)">
+                      </div>
+                    </div>
+                    <small class="fw-bold">
+                      {{ c.chiffre_affaires > 0 ? ((c.benefice / c.chiffre_affaires) * 100 | number:'1.1-1') : '0.0' }}%
+                    </small>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </app-card>
+  }
+}
+

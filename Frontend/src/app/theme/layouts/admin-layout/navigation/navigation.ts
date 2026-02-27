@@ -112,6 +112,47 @@ export const BoutiqueNavigationItems: NavigationItem[] = [
         classes: 'nav-item',
         url: '/boutique/commandes',
         icon: 'shopping-cart'
+      },
+      {
+        id: 'boutique-historique',
+        title: 'Historiques',
+        type: 'item',
+        classes: 'nav-item',
+        url: '/boutique/historique',
+        icon: 'history'
+      },
+      {
+        id: 'boutique-stock',
+        title: 'Stock',
+        type: 'item',
+        classes: 'nav-item',
+        url: '/boutique/stock',
+        icon: 'container'
+      },
+      {
+        id: 'boutique-benefice',
+        title: 'Bénéfice',
+        type: 'item',
+        classes: 'nav-item',
+        url: '/boutique/benefice',
+        icon: 'rise'
+      }
+    ]
+  },
+
+  {
+    id: 'myspace',
+    title: 'MySpace',
+    type: 'group',
+    icon: 'icon-navigation',
+    children: [
+      {
+        id: 'myspace-home',
+        title: 'MySpace',
+        type: 'item',
+        classes: 'nav-item',
+        url: '/boutique/myspace',
+        icon: 'user'
       }
     ]
   }
@@ -120,8 +161,24 @@ export const BoutiqueNavigationItems: NavigationItem[] = [
 // Navigation pour CLIENT
 export const ClientNavigationItems: NavigationItem[] = [
   {
+    id: 'client-home-group',
+    title: '',
+    type: 'group',
+    icon: 'icon-navigation',
+    children: [
+      {
+        id: 'client-home',
+        title: 'Accueil',
+        type: 'item',
+        classes: 'nav-item',
+        url: '/',
+        icon: 'home'
+      }
+    ]
+  },
+  {
     id: 'client-group',
-    title: 'MallConnect',
+    title: 'Mon Espace',
     type: 'group',
     icon: 'icon-navigation',
     children: [
@@ -130,9 +187,8 @@ export const ClientNavigationItems: NavigationItem[] = [
         title: 'Catalogue',
         type: 'item',
         classes: 'nav-item',
-        url: '/client/catalogue',
-        icon: 'appstore',
-        breadcrumbs: false
+        url: '/catalogue',
+        icon: 'appstore'
       },
       {
         id: 'client-panier',

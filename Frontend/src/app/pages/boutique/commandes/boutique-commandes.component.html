@@ -1,0 +1,303 @@
+<!-- Loading -->
+@if (loading) {
+  <div class="text-center py-5">
+    <div class="spinner-border text-primary spinner-border-lg" role="status"></div>
+    <p class="mt-3 text-muted">Chargement des commandes...</p>
+  </div>
+}
+
+@if (!loading) {
+  <!-- 🔝 Stats rapides -->
+  <div class="row mb-4">
+    <div class="col-md-6 col-xl-3 mb-3 fade-in animated">
+      <div class="stat-card stat-card-primary">
+        <div class="stat-card-body">
+          <div class="stat-icon-wrapper stat-icon-primary">
+            <i antIcon type="shopping-cart" theme="outline" class="stat-icon-i"></i>
+          </div>
+          <div class="stat-info">
+            <span class="stat-value">{{ totalCommandes }}</span>
+            <span class="stat-label">Total commandes</span>
+            <span class="stat-sub">{{ commandesFiltrees.length }} affiché(s)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6 col-xl-3 mb-3 fade-in animated" style="animation-delay: 100ms">
+      <div class="stat-card stat-card-warning">
+        <div class="stat-card-body">
+          <div class="stat-icon-wrapper stat-icon-warning">
+            <i antIcon type="clock-circle" theme="outline" class="stat-icon-i"></i>
+          </div>
+          <div class="stat-info">
+            <span class="stat-value text-warning">{{ commandesEnAttente }}</span>
+            <span class="stat-label">En attente</span>
+            <span class="stat-sub">À traiter</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6 col-xl-3 mb-3 fade-in animated" style="animation-delay: 200ms">
+      <div class="stat-card stat-card-success">
+        <div class="stat-card-body">
+          <div class="stat-icon-wrapper stat-icon-success">
+            <i antIcon type="check-circle" theme="outline" class="stat-icon-i"></i>
+          </div>
+          <div class="stat-info">
+            <span class="stat-value text-success">{{ commandesLivrees }}</span>
+            <span class="stat-label">Livrées</span>
+            <span class="stat-sub">Terminées</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6 col-xl-3 mb-3 fade-in animated" style="animation-delay: 300ms">
+      <div class="stat-card stat-card-info">
+        <div class="stat-card-body">
+          <div class="stat-icon-wrapper stat-icon-info">
+            <i antIcon type="account-book" theme="outline" class="stat-icon-i"></i>
+          </div>
+          <div class="stat-info">
+            <span class="stat-value">{{ totalRevenu | number:'1.0-0' }}</span>
+            <span class="stat-label">Revenu total (Ar)</span>
+            <span class="stat-sub">Toutes commandes</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filtres -->
+  <div class="slide-in-up animated">
+    <app-card>
+      <div class="row g-3 align-items-end">
+        <div class="col-md-4">
+          <label class="form-label fw-semibold">
+            <i antIcon type="search" theme="outline" class="me-1"></i> Rechercher
+          </label>
+          <input 
+            type="text" 
+            class="form-control" 
+            placeholder="N° commande, client..."
+            [(ngModel)]="searchTerm"
+            (ngModelChange)="applyFilters()"
+          >
+        </div>
+        <div class="col-md-3">
+          <label class="form-label fw-semibold">
+            <i antIcon type="filter" theme="outline" class="me-1"></i> Statut
+          </label>
+          <select class="form-select" [(ngModel)]="filterStatut" (ngModelChange)="applyFilters()">
+            <option value="all">Tous les statuts</option>
+            <option value="en_attente">En attente</option>
+            <option value="confirmee">Confirmée</option>
+            <option value="en_preparation">En préparation</option>
+            <option value="prete">Prête</option>
+            <option value="en_livraison">En livraison</option>
+            <option value="livree">Livrée</option>
+            <option value="annulee">Annulée</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <button class="btn btn-outline-primary w-100" (click)="loadCommandes()">
+            <i antIcon type="reload" theme="outline" class="me-1"></i> Actualiser
+          </button>
+        </div>
+      </div>
+    </app-card>
+  </div>
+
+  <!-- Error -->
+  @if (error) {
+    <div class="alert alert-danger mt-3">
+      <i antIcon type="exclamation-circle" theme="outline" class="me-2"></i>
+      {{ error }}
+      <button class="btn btn-sm btn-outline-danger ms-2" (click)="loadCommandes()">Réessayer</button>
+    </div>
+  }
+
+  <!-- Tableau -->
+  <app-card cardTitle="Commandes ({{ commandesFiltrees.length }})" class="mt-3">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle stock-table">
+        <thead class="table-light">
+          <tr>
+            <th>N° Commande</th>
+            <th>Client</th>
+            <th>Produits</th>
+            <th>Total</th>
+            <th>Statut</th>
+            <th>Date</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (cmd of paginatedCommandes; track cmd._id) {
+            <tr [class.table-warning]="cmd.statut === 'en_attente'"
+                [class.table-success-light]="cmd.statut === 'livree'">
+              <td>
+                <strong class="text-primary">{{ cmd.numero_commande }}</strong>
+              </td>
+              <td>
+                <div>
+                  <strong>{{ cmd.client_nom || 'N/A' }}</strong>
+                  <br>
+                  <small class="text-muted">{{ cmd.client_email || '' }}</small>
+                </div>
+              </td>
+              <td>
+                <div class="produit-list">
+                  @for (l of cmd.lignes; track $index) {
+                    <div class="d-flex align-items-center gap-1 mb-1">
+                      @if (l.image_produit) {
+                        <img [src]="l.image_produit" class="product-thumb-sm">
+                      }
+                      <small>{{ l.nom_produit }} <span class="text-muted">x{{ l.quantite }}</span></small>
+                    </div>
+                  }
+                </div>
+              </td>
+              <td><strong>{{ cmd.montant_total | number:'1.0-0' }} Ar</strong></td>
+              <td>
+                <span class="badge" [ngClass]="getStatutClass(cmd.statut)">
+                  {{ getStatutLabel(cmd.statut) }}
+                </span>
+              </td>
+              <td><small>{{ cmd.date_creation | date:'dd/MM/yyyy HH:mm' }}</small></td>
+              <td>
+                <div class="d-flex gap-1">
+                  <button class="btn btn-sm btn-outline-info" (click)="viewDetails(cmd)" title="Détails">
+                    <i antIcon type="eye" theme="outline"></i>
+                  </button>
+                  <select 
+                    class="form-select form-select-sm" 
+                    style="width: 130px" 
+                    [ngModel]="cmd.statut" 
+                    (ngModelChange)="updateStatut(cmd._id, $event)"
+                  >
+                    <option value="en_attente">En attente</option>
+                    <option value="confirmee">Confirmée</option>
+                    <option value="en_preparation">En prép.</option>
+                    <option value="prete">Prête</option>
+                    <option value="en_livraison">En livraison</option>
+                    <option value="livree">Livrée</option>
+                    <option value="annulee">Annulée</option>
+                  </select>
+                </div>
+              </td>
+            </tr>
+          }
+
+          @if (commandesFiltrees.length === 0) {
+            <tr>
+              <td colspan="7" class="text-center py-5 text-muted">
+                <i antIcon type="shopping-cart" theme="outline" class="f-36 d-block mb-2"></i>
+                Aucune commande trouvée
+                @if (filterStatut !== 'all') {
+                  <br><small>Essayez de changer le filtre de statut</small>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    @if (commandesFiltrees.length > pageSize) {
+      <div class="d-flex justify-content-between align-items-center mt-3 px-2">
+        <small class="text-muted">
+          Affichage {{ (currentPage - 1) * pageSize + 1 }} - {{ currentPage * pageSize > commandesFiltrees.length ? commandesFiltrees.length : currentPage * pageSize }} sur {{ commandesFiltrees.length }} commandes
+        </small>
+        <nav>
+          <ul class="pagination pagination-sm mb-0">
+            <li class="page-item" [class.disabled]="currentPage === 1">
+              <button class="page-link" (click)="goToPage(currentPage - 1)">‹</button>
+            </li>
+            @for (page of pages; track $index) {
+              @if (page === -1) {
+                <li class="page-item disabled"><span class="page-link">…</span></li>
+              } @else {
+                <li class="page-item" [class.active]="page === currentPage">
+                  <button class="page-link" (click)="goToPage(page)">{{ page }}</button>
+                </li>
+              }
+            }
+            <li class="page-item" [class.disabled]="currentPage === totalPages">
+              <button class="page-link" (click)="goToPage(currentPage + 1)">›</button>
+            </li>
+          </ul>
+        </nav>
+      </div>
+    }
+  </app-card>
+}
+
+<!-- Modal détails commande -->
+@if (showDetailsModal && selectedCommande) {
+  <div class="modal-backdrop fade show" (click)="closeDetailsModal()" style="z-index: 1050;"></div>
+  <div class="modal fade show d-block" tabindex="-1" style="z-index: 1055;">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">
+            <i antIcon type="shopping-cart" theme="outline" class="me-2"></i>
+            Commande {{ selectedCommande.numero_commande }}
+          </h5>
+          <button type="button" class="btn-close" (click)="closeDetailsModal()"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <p><strong>Client:</strong> {{ selectedCommande.client_nom }}</p>
+              <p><strong>Email:</strong> {{ selectedCommande.client_email }}</p>
+            </div>
+            <div class="col-md-6">
+              <p><strong>Date:</strong> {{ selectedCommande.date_creation | date:'dd/MM/yyyy HH:mm' }}</p>
+              <p>
+                <strong>Statut:</strong>
+                <span class="badge ms-1" [ngClass]="getStatutClass(selectedCommande.statut)">
+                  {{ getStatutLabel(selectedCommande.statut) }}
+                </span>
+              </p>
+            </div>
+          </div>
+          <h6>Produits commandés</h6>
+          <table class="table table-sm">
+            <thead>
+              <tr>
+                <th>Produit</th>
+                <th>Qté</th>
+                <th>Prix unit.</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (l of selectedCommande.lignes; track $index) {
+                <tr>
+                  <td>{{ l.nom_produit }}</td>
+                  <td>{{ l.quantite }}</td>
+                  <td>{{ l.prix_unitaire | number:'1.0-0' }} Ar</td>
+                  <td><strong>{{ l.prix_total | number:'1.0-0' }} Ar</strong></td>
+                </tr>
+              }
+            </tbody>
+            <tfoot>
+              <tr>
+                <td colspan="3" class="text-end fw-bold">Total:</td>
+                <td><strong class="text-primary">{{ selectedCommande.montant_total | number:'1.0-0' }} Ar</strong></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" (click)="closeDetailsModal()">Fermer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+

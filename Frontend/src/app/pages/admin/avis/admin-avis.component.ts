@@ -29,14 +29,15 @@ import { CardComponent } from '../../../theme/shared/components/card/card.compon
           <small class="text-muted pt-2 d-block">{{ total }} avis - Page {{ page }}/{{ pages }}</small>
         </div>
         <div class="col-md-3 text-end">
-          <button class="btn btn-sm btn-outline-secondary me-1" [disabled]="page <= 1" (click)="page = page - 1; loadAvis()">
+          <button class="btn btn-sm btn-outline-secondary me-1" [disabled]="loading || page <= 1" (click)="page = page - 1; loadAvis()">
             <i class="ti ti-chevron-left"></i>
           </button>
-          <button class="btn btn-sm btn-outline-secondary" [disabled]="page >= pages" (click)="page = page + 1; loadAvis()">
+          <button class="btn btn-sm btn-outline-secondary" [disabled]="loading || page >= pages" (click)="page = page + 1; loadAvis()">
             <i class="ti ti-chevron-right"></i>
           </button>
         </div>
       </div>
+      <div *ngIf="loading" class="text-center text-muted py-3">Chargement des avis...</div>
 
       <!-- Liste des avis -->
       <div *ngFor="let avis of avisList" class="card mb-3" [ngClass]="{'border-warning': avis.signale, 'border-danger': !avis.approuve}">
@@ -131,6 +132,7 @@ export class AdminAvisComponent implements OnInit {
   avisList: any[] = [];
   filterSignale = '';
   filterApprouve = '';
+  loading = false;
   page = 1;
   pages = 1;
   total = 0;
@@ -142,6 +144,7 @@ export class AdminAvisComponent implements OnInit {
   ngOnInit(): void { this.loadAvis(); }
 
   loadAvis(): void {
+    this.loading = true;
     const params: any = { page: this.page, limit: 15 };
     if (this.filterSignale) params.signale = this.filterSignale;
     if (this.filterApprouve) params.approuve = this.filterApprouve;
@@ -153,8 +156,12 @@ export class AdminAvisComponent implements OnInit {
           this.pages = res.pages;
           this.page = res.page;
         }
+        this.loading = false;
       },
-      error: (err) => console.error(err)
+      error: (err) => {
+        this.loading = false;
+        console.error(err);
+      }
     });
   }
 

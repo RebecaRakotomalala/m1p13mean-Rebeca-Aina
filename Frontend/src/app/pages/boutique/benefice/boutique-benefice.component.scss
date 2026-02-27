@@ -1,0 +1,250 @@
+// === Animations ===
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-30px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(30px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideInUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animated {
+  animation-duration: 0.6s;
+  animation-fill-mode: both;
+}
+
+.fade-in { animation-name: fadeIn; }
+.slide-in-left { animation-name: slideInLeft; }
+.slide-in-right { animation-name: slideInRight; }
+.slide-in-up { animation-name: slideInUp; }
+
+// === Stat Cards ===
+.stat-card {
+  border-radius: 16px;
+  padding: 0;
+  overflow: hidden;
+  border: none;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  transition: transform 0.3s, box-shadow 0.3s;
+  height: 100%;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  }
+
+  &-primary { border-left: 4px solid #1677ff; }
+  &-warning { border-left: 4px solid #faad14; }
+  &-danger { border-left: 4px solid #ff4d4f; }
+  &-success { border-left: 4px solid #52c41a; }
+}
+
+.stat-card-body {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 24px;
+}
+
+.stat-icon-wrapper {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  &.stat-icon-primary { background: rgba(22, 119, 255, 0.1); color: #1677ff; }
+  &.stat-icon-warning { background: rgba(250, 173, 20, 0.1); color: #faad14; }
+  &.stat-icon-danger { background: rgba(255, 77, 79, 0.1); color: #ff4d4f; }
+  &.stat-icon-success { background: rgba(82, 196, 26, 0.1); color: #52c41a; }
+}
+
+.stat-icon-i {
+  font-size: 26px;
+}
+
+.stat-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-value {
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: #1a1a2e;
+}
+
+.stat-label {
+  font-size: 13px;
+  color: #8c8c8c;
+  margin-top: 2px;
+}
+
+.stat-sub {
+  font-size: 11px;
+  color: #bfbfbf;
+  margin-top: 2px;
+}
+
+// === Info Cards ===
+.info-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 20px;
+  border-radius: 14px;
+  background: white;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  transition: transform 0.3s;
+
+  &:hover {
+    transform: translateY(-2px);
+  }
+}
+
+.info-card-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+
+  &.bg-blue-light { background: rgba(22, 119, 255, 0.1); color: #1677ff; }
+  &.bg-green-light { background: rgba(82, 196, 26, 0.1); color: #52c41a; }
+  &.bg-purple-light { background: rgba(114, 46, 209, 0.1); color: #722ed1; }
+}
+
+.info-card-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1a1a2e;
+}
+
+.info-card-label {
+  font-size: 12px;
+  color: #8c8c8c;
+}
+
+// === Stock Table ===
+.stock-table {
+  th {
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #8c8c8c;
+    border-bottom: 2px solid #f0f0f0;
+  }
+
+  td {
+    vertical-align: middle;
+    padding: 12px 8px;
+    font-size: 13px;
+  }
+
+  tr {
+    transition: background 0.2s;
+  }
+}
+
+.table-success-light {
+  background-color: rgba(82, 196, 26, 0.04) !important;
+}
+
+.table-danger-light {
+  background-color: rgba(255, 77, 79, 0.04) !important;
+}
+
+.product-thumb {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  object-fit: cover;
+  border: 2px solid #f0f0f0;
+}
+
+.product-thumb-placeholder {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: #f5f5f5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #bfbfbf;
+  font-size: 18px;
+}
+
+// === Pagination ===
+.pagination {
+  .page-link {
+    border-radius: 8px;
+    margin: 0 2px;
+    border: none;
+    color: #595959;
+    font-weight: 500;
+    min-width: 34px;
+    text-align: center;
+    transition: all 0.2s;
+
+    &:hover {
+      background: rgba(22, 119, 255, 0.08);
+      color: #1677ff;
+    }
+  }
+
+  .page-item.active .page-link {
+    background: #1677ff;
+    color: white;
+    box-shadow: 0 2px 6px rgba(22, 119, 255, 0.3);
+  }
+
+  .page-item.disabled .page-link {
+    color: #d9d9d9;
+    background: transparent;
+  }
+}
+
+// === Progress ===
+.progress {
+  border-radius: 4px;
+  background-color: #f5f5f5;
+}
+
+// === Responsive ===
+@media (max-width: 768px) {
+  .stat-card-body {
+    padding: 16px;
+  }
+
+  .stat-value {
+    font-size: 20px;
+  }
+
+  .stock-table {
+    font-size: 12px;
+  }
+
+  .product-thumb {
+    width: 32px;
+    height: 32px;
+  }
+}
+

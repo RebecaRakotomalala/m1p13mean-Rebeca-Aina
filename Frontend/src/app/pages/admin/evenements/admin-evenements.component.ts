@@ -23,7 +23,7 @@ import { CardComponent } from '../../../theme/shared/components/card/card.compon
     <app-card>
       <div class="row mb-0">
         <div class="col-md-3">
-          <select class="form-select" [(ngModel)]="filterStatut" (change)="loadEvenements()">
+          <select class="form-select" [(ngModel)]="filterStatut" (change)="onFilterChange()">
             <option value="">Tous les statuts</option>
             <option value="brouillon">Brouillon</option>
             <option value="publie">Publie</option>
@@ -33,7 +33,7 @@ import { CardComponent } from '../../../theme/shared/components/card/card.compon
           </select>
         </div>
         <div class="col-md-3">
-          <select class="form-select" [(ngModel)]="filterType" (change)="loadEvenements()">
+          <select class="form-select" [(ngModel)]="filterType" (change)="onFilterChange()">
             <option value="">Tous les types</option>
             <option value="promotion">Promotion</option>
             <option value="animation">Animation</option>
@@ -44,10 +44,20 @@ import { CardComponent } from '../../../theme/shared/components/card/card.compon
           </select>
         </div>
         <div class="col-md-3">
-          <small class="text-muted pt-2 d-block">{{ total }} evenement(s)</small>
+          <small class="text-muted pt-2 d-block">{{ total }} evenement(s) - Page {{ page }}/{{ pages }}</small>
+        </div>
+        <div class="col-md-3 text-end">
+          <button class="btn btn-sm btn-outline-secondary me-1" [disabled]="loading || page <= 1" (click)="goToPrevPage()">
+            <i class="ti ti-chevron-left"></i>
+          </button>
+          <button class="btn btn-sm btn-outline-secondary" [disabled]="loading || page >= pages" (click)="goToNextPage()">
+            <i class="ti ti-chevron-right"></i>
+          </button>
         </div>
       </div>
     </app-card>
+
+    <div *ngIf="loading" class="text-center text-muted py-3">Chargement des evenements...</div>
 
     <!-- Liste des evenements -->
     <div class="row">
@@ -215,6 +225,9 @@ export class AdminEvenementsComponent implements OnInit {
   boutiquesActives: any[] = [];
   filterStatut = '';
   filterType = '';
+  loading = false;
+  page = 1;
+  pages = 1;
   total = 0;
   showModal = false;
   editingId: string | null = null;
@@ -235,18 +248,46 @@ export class AdminEvenementsComponent implements OnInit {
   }
 
   loadEvenements(): void {
+    this.loading = true;
     const params: any = {};
     if (this.filterStatut) params.statut = this.filterStatut;
     if (this.filterType) params.type = this.filterType;
+    params.page = this.page;
+    params.limit = 12;
     this.api.getEvenements(params).subscribe({
       next: (res) => {
         if (res.success) {
           this.evenements = res.evenements.map((e: any) => ({ ...e, _showMenu: false }));
           this.total = res.total;
+          this.page = res.page || 1;
+          this.pages = res.pages || 1;
         }
+        this.loading = false;
       },
-      error: (err) => console.error(err)
+      error: (err) => {
+        this.loading = false;
+        console.error(err);
+      }
     });
+  }
+
+  onFilterChange(): void {
+    this.page = 1;
+    this.loadEvenements();
+  }
+
+  goToPrevPage(): void {
+    if (this.page > 1) {
+      this.page -= 1;
+      this.loadEvenements();
+    }
+  }
+
+  goToNextPage(): void {
+    if (this.page < this.pages) {
+      this.page += 1;
+      this.loadEvenements();
+    }
   }
 
   loadBoutiques(): void {

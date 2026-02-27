@@ -3,6 +3,8 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const bodyParser = require('body-parser');
+const path = require('path');
+const fs = require('fs');
 
 const app = express();
 
@@ -11,19 +13,25 @@ app.use(cors());
 app.use(bodyParser.json({ limit: '10mb' }));
 app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }));
 
+const ENABLE_REQUEST_LOGS = process.env.ENABLE_REQUEST_LOGS === 'true';
 app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+  if (ENABLE_REQUEST_LOGS) {
+    console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+  }
   next();
 });
 
 // CONFIGURATION
 const PORT = process.env.PORT || 3000;
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/mall';
+const FRONTEND_DIST_PATH = path.resolve(__dirname, '../Frontend/dist');
+const HAS_FRONTEND_BUILD = fs.existsSync(path.join(FRONTEND_DIST_PATH, 'index.html'));
 
 // CONNEXION MONGODB
 mongoose.connect(MONGODB_URI, {
   serverSelectionTimeoutMS: 5000,
-  retryWrites: true
+  retryWrites: true,
+  family: 4 
 })
   .then(() => {
     console.log('Connexion MongoDB reussie!');
@@ -37,8 +45,8 @@ mongoose.connection.on('error', (err) => {
   console.error('Erreur MongoDB:', err.message);
 });
 
-// ROUTE RACINE
-app.get('/', (req, res) => {
+// ROUTE API RACINE
+app.get('/api', (req, res) => {
   res.json({
     message: 'MallConnect API',
     status: 'OK',
@@ -57,6 +65,10 @@ app.get('/', (req, res) => {
   });
 });
 
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ success: true, status: 'ok' });
+});
+
 // ROUTES
 const testRoutes = require('./routes/test.routes');
 const authRoutes = require('./routes/auth.routes');
@@ -69,6 +81,7 @@ const avisRoutes = require('./routes/avis.routes');
 const favoriRoutes = require('./routes/favori.routes');
 const adminRoutes = require('./routes/admin.routes');
 const evenementRoutes = require('./routes/evenement.routes');
+const homeRoutes = require('./routes/home.routes');
 
 app.use('/api/test', testRoutes);
 app.use('/api/auth', authRoutes);
@@ -81,6 +94,14 @@ app.use('/api/avis', avisRoutes);
 app.use('/api/favoris', favoriRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/evenements', evenementRoutes);
+app.use('/api/home', homeRoutes);
+
+if (HAS_FRONTEND_BUILD) {
+  app.use(express.static(FRONTEND_DIST_PATH));
+  app.get(/^\/(?!api).*/, (req, res) => {
+    res.sendFile(path.join(FRONTEND_DIST_PATH, 'index.html'));
+  });
+}
 
 // GESTION ERREURS
 app.use((req, res) => {

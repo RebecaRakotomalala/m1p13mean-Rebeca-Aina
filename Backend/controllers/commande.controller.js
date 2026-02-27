@@ -132,19 +132,86 @@ exports.getCommandesBoutique = async (req, res) => {
 // Toutes les commandes (admin)
 exports.getAllCommandes = async (req, res) => {
   try {
-    const { statut, page = 1, limit = 20 } = req.query;
-    let query = {};
+    const {
+      statut,
+      statut_paiement: statutPaiement,
+      mode_livraison: modeLivraison,
+      search,
+      dateFrom,
+      dateTo,
+      page = 1,
+      limit = 20
+    } = req.query;
+
+    const query = {};
     if (statut) query.statut = statut;
-    const skip = (Number(page) - 1) * Number(limit);
-    const total = await Commande.countDocuments(query);
-    const commandes = await Commande.find(query).populate('client_id', 'nom prenom email').sort({ date_creation: -1 }).skip(skip).limit(Number(limit));
-    
-    const result = [];
-    for (const cmd of commandes) {
-      const lignes = await LigneCommande.find({ commande_id: cmd._id }).populate('boutique_id', 'nom slug');
-      result.push({ ...cmd.toObject(), lignes });
+    if (statutPaiement) query.statut_paiement = statutPaiement;
+    if (modeLivraison) query.mode_livraison = modeLivraison;
+    if (search) {
+      query.$or = [
+        { numero_commande: { $regex: search, $options: 'i' } },
+        { client_nom: { $regex: search, $options: 'i' } },
+        { client_email: { $regex: search, $options: 'i' } }
+      ];
     }
-    res.json({ success: true, count: result.length, total, page: Number(page), pages: Math.ceil(total / Number(limit)), commandes: result });
+
+    if (dateFrom || dateTo) {
+      query.date_creation = {};
+      if (dateFrom) {
+        const fromDate = new Date(String(dateFrom));
+        if (!Number.isNaN(fromDate.getTime())) query.date_creation.$gte = fromDate;
+      }
+      if (dateTo) {
+        const toDate = new Date(String(dateTo));
+        if (!Number.isNaN(toDate.getTime())) {
+          toDate.setHours(23, 59, 59, 999);
+          query.date_creation.$lte = toDate;
+        }
+      }
+      if (Object.keys(query.date_creation).length === 0) delete query.date_creation;
+    }
+
+    const parsedPage = Math.max(1, Number(page) || 1);
+    const parsedLimit = Math.max(1, Math.min(100, Number(limit) || 20));
+    const skip = (parsedPage - 1) * parsedLimit;
+
+    const [total, commandes] = await Promise.all([
+      Commande.countDocuments(query),
+      Commande.find(query)
+        .populate('client_id', 'nom prenom email')
+        .sort({ date_creation: -1 })
+        .skip(skip)
+        .limit(parsedLimit)
+        .lean()
+    ]);
+
+    const commandeIds = commandes.map((c) => c._id);
+    const lignes = commandeIds.length > 0
+      ? await LigneCommande.find({ commande_id: { $in: commandeIds } })
+        .populate('boutique_id', 'nom slug')
+        .lean()
+      : [];
+
+    const lignesByCommande = new Map();
+    for (const ligne of lignes) {
+      const key = String(ligne.commande_id);
+      if (!lignesByCommande.has(key)) lignesByCommande.set(key, []);
+      lignesByCommande.get(key).push(ligne);
+    }
+
+    const result = commandes.map((cmd) => ({
+      ...cmd,
+      lignes: lignesByCommande.get(String(cmd._id)) || []
+    }));
+
+    res.json({
+      success: true,
+      count: result.length,
+      total,
+      page: parsedPage,
+      pages: Math.ceil(total / parsedLimit),
+      commandes: result
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Erreur recuperation commandes', error: error.message });
   }

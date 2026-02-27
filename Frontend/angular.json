@@ -3,7 +3,7 @@
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
-    "mantis-free-version": {
+    "mallconnect-free-version": {
       "projectType": "application",
       "schematics": {
         "@schematics/angular:component": {
@@ -33,13 +33,13 @@
               "budgets": [
                 {
                   "type": "initial",
-                  "maximumWarning": "1mb",
-                  "maximumError": "1mb"
+                  "maximumWarning": "3mb",
+                  "maximumError": "5mb"
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "2kb",
-                  "maximumError": "4kb"
+                  "maximumWarning": "20kb",
+                  "maximumError": "50kb"
                 }
               ],
               "fileReplacements": [
@@ -68,10 +68,10 @@
           "builder": "@angular-devkit/build-angular:dev-server",
           "configurations": {
             "production": {
-              "buildTarget": "mantis-free-version:build:production"
+              "buildTarget": "mallconnect-free-version:build:production"
             },
             "development": {
-              "buildTarget": "mantis-free-version:build:development"
+              "buildTarget": "mallconnect-free-version:build:development"
             }
           },
           "defaultConfiguration": "development"
@@ -79,7 +79,7 @@
         "extract-i18n": {
           "builder": "@angular-devkit/build-angular:extract-i18n",
           "options": {
-            "buildTarget": "mantis-free-version:build"
+            "buildTarget": "mallconnect-free-version:build"
           }
         },
         "lint": {

@@ -100,6 +100,22 @@ const routes: Routes = [
       {
         path: 'commandes',
         loadComponent: () => import('./pages/boutique/commandes/boutique-commandes.component').then(c => c.BoutiqueCommandesComponent)
+      },
+      {
+        path: 'myspace',
+        loadComponent: () => import('./pages/boutique/myspace/myspace.component').then(c => c.MySpaceComponent)
+      },
+      {
+        path: 'historique',
+        loadComponent: () => import('./pages/boutique/historique/boutique-historique.component').then(c => c.BoutiqueHistoriqueComponent)
+      },
+      {
+        path: 'stock',
+        loadComponent: () => import('./pages/boutique/stock/boutique-stock.component').then(c => c.BoutiqueStockComponent)
+      },
+      {
+        path: 'benefice',
+        loadComponent: () => import('./pages/boutique/benefice/boutique-benefice.component').then(c => c.BoutiqueBeneficeComponent)
       }
     ]
   },
