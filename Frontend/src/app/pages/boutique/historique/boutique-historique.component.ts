@@ -303,7 +303,7 @@ export class BoutiqueHistoriqueComponent implements OnInit {
         height: 350,
         toolbar: { show: false },
         background: 'transparent',
-        animations: { enabled: true, speed: 800 }
+        animations: { enabled: false, speed: 800 }
       },
       dataLabels: { enabled: false },
       stroke: {
@@ -355,7 +355,7 @@ export class BoutiqueHistoriqueComponent implements OnInit {
         height: 350,
         toolbar: { show: false },
         background: 'transparent',
-        animations: { enabled: true, speed: 800 }
+        animations: { enabled: false, speed: 800 }
       },
       plotOptions: {
         bar: {

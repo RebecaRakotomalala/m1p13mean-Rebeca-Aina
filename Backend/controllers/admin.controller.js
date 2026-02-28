@@ -12,85 +12,85 @@ const Avis = require('../models/Avis');
 // Dashboard stats admin (enrichi)
 exports.getDashboardStats = async (req, res) => {
   try {
-    const totalUsers = await User.countDocuments();
-    const totalClients = await User.countDocuments({ role: 'client' });
-    const totalBoutiques = await Boutique.countDocuments();
-    const boutiquesActives = await Boutique.countDocuments({ statut: 'active' });
-    const boutiquesEnAttente = await Boutique.countDocuments({ statut: 'en_attente' });
-    const totalProduits = await Produit.countDocuments({ actif: true });
-    const totalCommandes = await Commande.countDocuments();
-    const commandesEnAttente = await Commande.countDocuments({ statut: 'en_attente' });
-    const commandesLivrees = await Commande.countDocuments({ statut: 'livree' });
-    const commandesAnnulees = await Commande.countDocuments({ statut: 'annulee' });
-
-    // Chiffre d'affaires global
-    const caResult = await Commande.aggregate([
-      { $match: { statut: { $nin: ['annulee', 'remboursee'] } } },
-      { $group: { _id: null, total: { $sum: '$montant_total' }, count: { $sum: 1 } } }
-    ]);
-    const chiffreAffaires = caResult.length > 0 ? caResult[0].total : 0;
-    const commandesValides = caResult.length > 0 ? caResult[0].count : 0;
-
-    // Panier moyen
-    const panierMoyen = commandesValides > 0 ? Math.round(chiffreAffaires / commandesValides) : 0;
-
-    // Taux de conversion (commandes livrees / total commandes)
-    const tauxConversion = totalCommandes > 0 ? Math.round((commandesLivrees / totalCommandes) * 100) : 0;
-
-    // CA du mois en cours
     const debutMois = new Date();
     debutMois.setDate(1);
     debutMois.setHours(0, 0, 0, 0);
-    const caMoisResult = await Commande.aggregate([
-      { $match: { date_creation: { $gte: debutMois }, statut: { $nin: ['annulee', 'remboursee'] } } },
-      { $group: { _id: null, total: { $sum: '$montant_total' }, count: { $sum: 1 } } }
-    ]);
-    const caMois = caMoisResult.length > 0 ? caMoisResult[0].total : 0;
-
-    // Commandes recentes
-    const commandesRecentes = await Commande.find()
-      .populate('client_id', 'nom prenom email')
-      .sort({ date_creation: -1 }).limit(10);
-
-    // Ventes par mois (6 derniers mois)
     const sixMonthsAgo = new Date();
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-    const ventesParMois = await Commande.aggregate([
-      { $match: { date_creation: { $gte: sixMonthsAgo }, statut: { $nin: ['annulee', 'remboursee'] } } },
-      { $group: { _id: { $dateToString: { format: '%Y-%m', date: '$date_creation' } }, total: { $sum: '$montant_total' }, count: { $sum: 1 } } },
-      { $sort: { _id: 1 } }
+
+    const [
+      totalUsers,
+      totalClients,
+      totalBoutiques,
+      boutiquesActives,
+      boutiquesEnAttente,
+      totalProduits,
+      totalCommandes,
+      commandesEnAttente,
+      commandesLivrees,
+      commandesAnnulees,
+      caResult,
+      caMoisResult,
+      commandesRecentes,
+      ventesParMois,
+      topBoutiques,
+      parCategorie,
+      nouveauxUsers,
+      avisSignales,
+      commandesParStatut
+    ] = await Promise.all([
+      User.countDocuments(),
+      User.countDocuments({ role: 'client' }),
+      Boutique.countDocuments(),
+      Boutique.countDocuments({ statut: 'active' }),
+      Boutique.countDocuments({ statut: 'en_attente' }),
+      Produit.countDocuments({ actif: true }),
+      Commande.countDocuments(),
+      Commande.countDocuments({ statut: 'en_attente' }),
+      Commande.countDocuments({ statut: 'livree' }),
+      Commande.countDocuments({ statut: 'annulee' }),
+      Commande.aggregate([
+        { $match: { statut: { $nin: ['annulee', 'remboursee'] } } },
+        { $group: { _id: null, total: { $sum: '$montant_total' }, count: { $sum: 1 } } }
+      ]),
+      Commande.aggregate([
+        { $match: { date_creation: { $gte: debutMois }, statut: { $nin: ['annulee', 'remboursee'] } } },
+        { $group: { _id: null, total: { $sum: '$montant_total' }, count: { $sum: 1 } } }
+      ]),
+      Commande.find().populate('client_id', 'nom prenom email').sort({ date_creation: -1 }).limit(10).lean(),
+      Commande.aggregate([
+        { $match: { date_creation: { $gte: sixMonthsAgo }, statut: { $nin: ['annulee', 'remboursee'] } } },
+        { $group: { _id: { $dateToString: { format: '%Y-%m', date: '$date_creation' } }, total: { $sum: '$montant_total' }, count: { $sum: 1 } } },
+        { $sort: { _id: 1 } }
+      ]),
+      LigneCommande.aggregate([
+        { $lookup: { from: 'commandes', localField: 'commande_id', foreignField: '_id', as: 'commande' } },
+        { $unwind: '$commande' },
+        { $match: { 'commande.statut': { $nin: ['annulee', 'remboursee'] } } },
+        { $group: { _id: '$boutique_id', totalCA: { $sum: '$prix_total' }, totalCommandes: { $sum: 1 } } },
+        { $sort: { totalCA: -1 } },
+        { $limit: 5 },
+        { $lookup: { from: 'boutiques', localField: '_id', foreignField: '_id', as: 'boutique' } },
+        { $unwind: '$boutique' },
+        { $project: { nom: '$boutique.nom', totalCA: 1, totalCommandes: 1 } }
+      ]),
+      Boutique.aggregate([
+        { $match: { statut: 'active' } },
+        { $group: { _id: '$categorie_principale', count: { $sum: 1 } } },
+        { $sort: { count: -1 } }
+      ]),
+      User.countDocuments({ date_creation: { $gte: debutMois } }),
+      Avis.countDocuments({ signale: true, approuve: true }),
+      Commande.aggregate([
+        { $group: { _id: '$statut', count: { $sum: 1 } } }
+      ])
     ]);
 
-    // Top 5 boutiques par CA
-    const topBoutiques = await LigneCommande.aggregate([
-      { $lookup: { from: 'commandes', localField: 'commande_id', foreignField: '_id', as: 'commande' } },
-      { $unwind: '$commande' },
-      { $match: { 'commande.statut': { $nin: ['annulee', 'remboursee'] } } },
-      { $group: { _id: '$boutique_id', totalCA: { $sum: '$prix_total' }, totalCommandes: { $sum: 1 } } },
-      { $sort: { totalCA: -1 } },
-      { $limit: 5 },
-      { $lookup: { from: 'boutiques', localField: '_id', foreignField: '_id', as: 'boutique' } },
-      { $unwind: '$boutique' },
-      { $project: { nom: '$boutique.nom', totalCA: 1, totalCommandes: 1 } }
-    ]);
-
-    // Repartition par categorie de boutique
-    const parCategorie = await Boutique.aggregate([
-      { $match: { statut: 'active' } },
-      { $group: { _id: '$categorie_principale', count: { $sum: 1 } } },
-      { $sort: { count: -1 } }
-    ]);
-
-    // Nouveaux utilisateurs ce mois
-    const nouveauxUsers = await User.countDocuments({ date_creation: { $gte: debutMois } });
-
-    // Avis signales
-    const avisSignales = await Avis.countDocuments({ signale: true, approuve: true });
-
-    // Commandes par statut
-    const commandesParStatut = await Commande.aggregate([
-      { $group: { _id: '$statut', count: { $sum: 1 } } }
-    ]);
+    const chiffreAffaires = caResult.length > 0 ? caResult[0].total : 0;
+    const commandesValides = caResult.length > 0 ? caResult[0].count : 0;
+    const panierMoyen = commandesValides > 0 ? Math.round(chiffreAffaires / commandesValides) : 0;
+    const tauxConversion = totalCommandes > 0 ? Math.round((commandesLivrees / totalCommandes) * 100) : 0;
+    const caMois = caMoisResult.length > 0 ? caMoisResult[0].total : 0;
 
     res.json({
       success: true,
@@ -457,19 +457,14 @@ exports.importCsvPrixAchat = async (req, res) => {
 // Stats bénéfice pour le propriétaire de boutique
 exports.getBeneficeStats = async (req, res) => {
   try {
-    const boutiques = await Boutique.find({ utilisateur_id: req.user._id });
+    const boutiques = await Boutique.find({ utilisateur_id: req.user._id }).select('_id').lean();
     if (boutiques.length === 0) return res.json({ success: true, stats: null, message: 'Aucune boutique' });
     const boutiqueIds = boutiques.map(b => b._id);
 
-    // Tous les produits avec prix_achat
     const produits = await Produit.find({ boutique_id: { $in: boutiqueIds } })
-      .select('nom categorie prix_initial prix_promo prix_achat stock_quantite image_principale nombre_ventes actif reference_sku');
+      .select('nom categorie prix_initial prix_promo prix_achat stock_quantite stock_illimite image_principale nombre_ventes actif reference_sku')
+      .lean();
 
-    // Lignes de commandes (ventes) pour calculer le bénéfice réel
-    const lignesCommandes = await LigneCommande.find({ boutique_id: { $in: boutiqueIds } })
-      .populate('commande_id', 'statut date_creation');
-
-    // Calculer bénéfice par produit
     const beneficeParProduit = {};
     for (const produit of produits) {
       beneficeParProduit[produit._id.toString()] = {
@@ -489,34 +484,62 @@ exports.getBeneficeStats = async (req, res) => {
       };
     }
 
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+    const [ventesParProduitAgg, ventesMoisProduitAgg] = await Promise.all([
+      LigneCommande.aggregate([
+        { $match: { boutique_id: { $in: boutiqueIds } } },
+        { $lookup: { from: 'commandes', localField: 'commande_id', foreignField: '_id', as: 'commande' } },
+        { $unwind: '$commande' },
+        { $match: { 'commande.statut': { $nin: ['annulee', 'remboursee'] } } },
+        {
+          $group: {
+            _id: '$produit_id',
+            total_vendu: { $sum: '$quantite' },
+            chiffre_affaires: { $sum: '$prix_total' }
+          }
+        }
+      ]),
+      LigneCommande.aggregate([
+        { $match: { boutique_id: { $in: boutiqueIds } } },
+        { $lookup: { from: 'commandes', localField: 'commande_id', foreignField: '_id', as: 'commande' } },
+        { $unwind: '$commande' },
+        { $match: { 'commande.statut': { $nin: ['annulee', 'remboursee'] }, 'commande.date_creation': { $gte: sixMonthsAgo } } },
+        {
+          $group: {
+            _id: {
+              mois: { $dateToString: { format: '%Y-%m', date: '$commande.date_creation' } },
+              produit_id: '$produit_id'
+            },
+            total_vendu: { $sum: '$quantite' },
+            chiffre_affaires: { $sum: '$prix_total' }
+          }
+        }
+      ])
+    ]);
+
     let totalCA = 0;
     let totalCout = 0;
-
-    for (const lc of lignesCommandes) {
-      if (lc.commande_id && !['annulee', 'remboursee'].includes(lc.commande_id.statut)) {
-        const pid = lc.produit_id?.toString();
-        if (pid && beneficeParProduit[pid]) {
-          const bp = beneficeParProduit[pid];
-          bp.total_vendu += lc.quantite;
-          bp.chiffre_affaires += lc.prix_total;
-          bp.cout_total += (bp.prix_achat * lc.quantite);
-          totalCA += lc.prix_total;
-          totalCout += (bp.prix_achat * lc.quantite);
-        }
-      }
+    for (const row of ventesParProduitAgg) {
+      const pid = row._id?.toString();
+      if (!pid || !beneficeParProduit[pid]) continue;
+      const bp = beneficeParProduit[pid];
+      bp.total_vendu = row.total_vendu || 0;
+      bp.chiffre_affaires = row.chiffre_affaires || 0;
+      bp.cout_total = bp.prix_achat * bp.total_vendu;
+      totalCA += bp.chiffre_affaires;
+      totalCout += bp.cout_total;
     }
 
-    // Calculer bénéfice et marge pour chaque produit
     const produitsAvecBenefice = Object.values(beneficeParProduit).map(p => {
       p.benefice = p.chiffre_affaires - p.cout_total;
       p.marge_pct = p.chiffre_affaires > 0 ? ((p.benefice / p.chiffre_affaires) * 100) : 0;
       return p;
     });
 
-    // Trier par bénéfice décroissant
     produitsAvecBenefice.sort((a, b) => b.benefice - a.benefice);
 
-    // Bénéfice par catégorie
     const parCategorie = {};
     produitsAvecBenefice.forEach(p => {
       if (!parCategorie[p.categorie]) {
@@ -527,29 +550,20 @@ exports.getBeneficeStats = async (req, res) => {
       parCategorie[p.categorie].benefice += p.benefice;
     });
 
-    // Bénéfice par mois (6 derniers mois)
-    const sixMonthsAgo = new Date();
-    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
     const beneficeParMois = {};
-
-    for (const lc of lignesCommandes) {
-      if (lc.commande_id && !['annulee', 'remboursee'].includes(lc.commande_id.statut)) {
-        const date = new Date(lc.commande_id.date_creation || lc.date_creation);
-        if (date >= sixMonthsAgo) {
-          const moisKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-          if (!beneficeParMois[moisKey]) {
-            beneficeParMois[moisKey] = { ca: 0, cout: 0, benefice: 0 };
-          }
-          const pid = lc.produit_id?.toString();
-          const prixAchat = pid && beneficeParProduit[pid] ? beneficeParProduit[pid].prix_achat : 0;
-          beneficeParMois[moisKey].ca += lc.prix_total;
-          beneficeParMois[moisKey].cout += (prixAchat * lc.quantite);
-          beneficeParMois[moisKey].benefice += (lc.prix_total - (prixAchat * lc.quantite));
-        }
-      }
+    for (const row of ventesMoisProduitAgg) {
+      const moisKey = row?._id?.mois;
+      const pid = row?._id?.produit_id?.toString();
+      if (!moisKey) continue;
+      if (!beneficeParMois[moisKey]) beneficeParMois[moisKey] = { ca: 0, cout: 0, benefice: 0 };
+      const prixAchat = pid && beneficeParProduit[pid] ? beneficeParProduit[pid].prix_achat : 0;
+      const cout = prixAchat * (row.total_vendu || 0);
+      const ca = row.chiffre_affaires || 0;
+      beneficeParMois[moisKey].ca += ca;
+      beneficeParMois[moisKey].cout += cout;
+      beneficeParMois[moisKey].benefice += (ca - cout);
     }
 
-    // Valeur stock (au prix d'achat)
     const valeurStockAchat = produits.reduce((sum, p) => {
       if (p.stock_illimite) return sum;
       return sum + ((p.prix_achat || 0) * p.stock_quantite);
@@ -562,7 +576,7 @@ exports.getBeneficeStats = async (req, res) => {
 
     const totalBenefice = totalCA - totalCout;
     const margeMoyenne = totalCA > 0 ? ((totalBenefice / totalCA) * 100) : 0;
-    const nbProduitsAvecPrixAchat = produits.filter(p => p.prix_achat > 0).length;
+    const nbProduitsAvecPrixAchat = produits.filter(p => (p.prix_achat || 0) > 0).length;
 
     res.json({
       success: true,
@@ -588,49 +602,72 @@ exports.getBeneficeStats = async (req, res) => {
 // Stats pour le proprietaire de boutique
 exports.getBoutiqueStats = async (req, res) => {
   try {
-    const boutiques = await Boutique.find({ utilisateur_id: req.user._id });
+    const boutiques = await Boutique.find({ utilisateur_id: req.user._id }).lean();
     if (boutiques.length === 0) return res.json({ success: true, stats: null, message: 'Aucune boutique' });
     const boutiqueIds = boutiques.map(b => b._id);
-    const totalProduits = await Produit.countDocuments({ boutique_id: { $in: boutiqueIds }, actif: true });
-    const lignesCommandes = await LigneCommande.find({ boutique_id: { $in: boutiqueIds } }).populate('commande_id');
-    let totalVentes = 0;
-    const commandeIds = new Set();
-    for (const lc of lignesCommandes) {
-      if (lc.commande_id && !['annulee', 'remboursee'].includes(lc.commande_id.statut)) {
-        totalVentes += lc.prix_total;
-        commandeIds.add(lc.commande_id._id.toString());
-      }
-    }
-    const commandesCount = commandeIds.size;
-    const totalAvis = await Avis.countDocuments({ boutique_id: { $in: boutiqueIds } });
-    
-    // Compter les commandes (pas les lignes) avec statut 'en_attente'
-    const commandesEnAttenteResult = await LigneCommande.aggregate([
+
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+    const [
+      totalProduits,
+      totalAvis,
+      ventesAgg,
+      commandesEnAttenteResult,
+      ventesParMois,
+      commandesParStatut
+    ] = await Promise.all([
+      Produit.countDocuments({ boutique_id: { $in: boutiqueIds }, actif: true }),
+      Avis.countDocuments({ boutique_id: { $in: boutiqueIds } }),
+      LigneCommande.aggregate([
+        { $match: { boutique_id: { $in: boutiqueIds } } },
+        { $lookup: { from: 'commandes', localField: 'commande_id', foreignField: '_id', as: 'commande' } },
+        { $unwind: '$commande' },
+        { $match: { 'commande.statut': { $nin: ['annulee', 'remboursee'] } } },
+        {
+          $group: {
+            _id: null,
+            totalVentes: { $sum: '$prix_total' },
+            commandes: { $addToSet: '$commande_id' }
+          }
+        },
+        {
+          $project: {
+            _id: 0,
+            totalVentes: 1,
+            commandesCount: { $size: '$commandes' }
+          }
+        }
+      ]),
+      LigneCommande.aggregate([
       { $match: { boutique_id: { $in: boutiqueIds } } },
       { $lookup: { from: 'commandes', localField: 'commande_id', foreignField: '_id', as: 'commande' } },
       { $unwind: '$commande' },
       { $match: { 'commande.statut': 'en_attente' } },
       { $group: { _id: '$commande_id' } },
       { $count: 'total' }
+      ]),
+      LigneCommande.aggregate([
+        { $match: { boutique_id: { $in: boutiqueIds } } },
+        { $lookup: { from: 'commandes', localField: 'commande_id', foreignField: '_id', as: 'commande' } },
+        { $unwind: '$commande' },
+        { $match: { 'commande.statut': { $nin: ['annulee', 'remboursee'] }, date_creation: { $gte: sixMonthsAgo } } },
+        { $group: { _id: { $dateToString: { format: '%Y-%m', date: '$date_creation' } }, total: { $sum: '$prix_total' }, count: { $sum: 1 } } },
+        { $sort: { _id: 1 } }
+      ]),
+      LigneCommande.aggregate([
+        { $match: { boutique_id: { $in: boutiqueIds } } },
+        { $lookup: { from: 'commandes', localField: 'commande_id', foreignField: '_id', as: 'commande' } },
+        { $unwind: '$commande' },
+        { $group: { _id: { commande_id: '$commande_id', statut: '$commande.statut' } } },
+        { $group: { _id: '$_id.statut', count: { $sum: 1 } } },
+        { $project: { statut: '$_id', count: 1, _id: 0 } }
+      ])
     ]);
+
+    const totalVentes = ventesAgg.length > 0 ? ventesAgg[0].totalVentes : 0;
+    const commandesCount = ventesAgg.length > 0 ? ventesAgg[0].commandesCount : 0;
     const commandesEnAttente = commandesEnAttenteResult.length > 0 ? commandesEnAttenteResult[0].total : 0;
-
-    const sixMonthsAgo = new Date();
-    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-    const ventesParMois = await LigneCommande.aggregate([
-      { $match: { boutique_id: { $in: boutiqueIds }, date_creation: { $gte: sixMonthsAgo } } },
-      { $group: { _id: { $dateToString: { format: '%Y-%m', date: '$date_creation' } }, total: { $sum: '$prix_total' }, count: { $sum: 1 } } },
-      { $sort: { _id: 1 } }
-    ]);
-
-    // Calculer les commandes par statut
-    const commandesParStatut = await LigneCommande.aggregate([
-      { $match: { boutique_id: { $in: boutiqueIds } } },
-      { $lookup: { from: 'commandes', localField: 'commande_id', foreignField: '_id', as: 'commande' } },
-      { $unwind: '$commande' },
-      { $group: { _id: '$commande.statut', count: { $sum: 1 } } },
-      { $project: { statut: '$_id', count: 1, _id: 0 } }
-    ]);
 
     res.json({
       success: true,

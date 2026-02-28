@@ -90,13 +90,43 @@ exports.createCommande = async (req, res) => {
 // Mes commandes (client)
 exports.getMyCommandes = async (req, res) => {
   try {
-    const commandes = await Commande.find({ client_id: req.user._id }).sort({ date_creation: -1 });
-    const result = [];
-    for (const cmd of commandes) {
-      const lignes = await LigneCommande.find({ commande_id: cmd._id }).populate('boutique_id', 'nom slug logo_url');
-      result.push({ ...cmd.toObject(), lignes });
+    const page = Math.max(1, Number(req.query.page) || 1);
+    const limit = Math.max(1, Math.min(100, Number(req.query.limit) || 20));
+    const skip = (page - 1) * limit;
+    const query = { client_id: req.user._id };
+
+    const [total, commandes] = await Promise.all([
+      Commande.countDocuments(query),
+      Commande.find(query).sort({ date_creation: -1 }).skip(skip).limit(limit).lean()
+    ]);
+
+    const commandeIds = commandes.map((c) => c._id);
+    const lignes = commandeIds.length
+      ? await LigneCommande.find({ commande_id: { $in: commandeIds } })
+        .populate('boutique_id', 'nom slug logo_url')
+        .lean()
+      : [];
+
+    const lignesMap = new Map();
+    for (const l of lignes) {
+      const key = String(l.commande_id);
+      if (!lignesMap.has(key)) lignesMap.set(key, []);
+      lignesMap.get(key).push(l);
     }
-    res.json({ success: true, count: result.length, commandes: result });
+
+    const result = commandes.map((cmd) => ({
+      ...cmd,
+      lignes: lignesMap.get(String(cmd._id)) || []
+    }));
+
+    res.json({
+      success: true,
+      count: result.length,
+      total,
+      page,
+      pages: Math.ceil(total / limit),
+      commandes: result
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Erreur recuperation commandes', error: error.message });
   }
@@ -105,25 +135,61 @@ exports.getMyCommandes = async (req, res) => {
 // Commandes pour une boutique
 exports.getCommandesBoutique = async (req, res) => {
   try {
-    const boutiques = await Boutique.find({ utilisateur_id: req.user._id });
+    const page = Math.max(1, Number(req.query.page) || 1);
+    const limit = Math.max(1, Math.min(100, Number(req.query.limit) || 20));
+    const skip = (page - 1) * limit;
+
+    const boutiques = await Boutique.find({ utilisateur_id: req.user._id }).select('_id').lean();
     const boutiqueIds = boutiques.map(b => b._id);
-    const lignes = await LigneCommande.find({ boutique_id: { $in: boutiqueIds } })
-      .populate('commande_id')
-      .populate('produit_id', 'nom image_principale')
-      .sort({ date_creation: -1 });
-    
-    // Grouper par commande
-    const commandesMap = {};
-    for (const l of lignes) {
-      if (!l.commande_id) continue;
-      const cmdId = l.commande_id._id.toString();
-      if (!commandesMap[cmdId]) {
-        commandesMap[cmdId] = { ...l.commande_id.toObject(), lignes: [] };
-      }
-      commandesMap[cmdId].lignes.push(l);
+    if (!boutiqueIds.length) {
+      return res.json({ success: true, count: 0, total: 0, page, pages: 0, commandes: [] });
     }
-    const commandes = Object.values(commandesMap).sort((a, b) => new Date(b.date_creation) - new Date(a.date_creation));
-    res.json({ success: true, count: commandes.length, commandes });
+
+    // Paginer d'abord les IDs de commandes uniques pour eviter de charger toutes les lignes.
+    const aggregateIds = await LigneCommande.aggregate([
+      { $match: { boutique_id: { $in: boutiqueIds } } },
+      {
+        $group: {
+          _id: '$commande_id',
+          date_creation: { $max: '$date_creation' }
+        }
+      },
+      { $sort: { date_creation: -1 } },
+      { $facet: {
+        meta: [{ $count: 'total' }],
+        data: [{ $skip: skip }, { $limit: limit }]
+      }}
+    ]);
+
+    const total = aggregateIds?.[0]?.meta?.[0]?.total || 0;
+    const commandeIds = (aggregateIds?.[0]?.data || []).map((d) => d._id);
+
+    if (!commandeIds.length) {
+      return res.json({ success: true, count: 0, total, page, pages: Math.ceil(total / limit), commandes: [] });
+    }
+
+    const [commandesRaw, lignes] = await Promise.all([
+      Commande.find({ _id: { $in: commandeIds } }).lean(),
+      LigneCommande.find({ commande_id: { $in: commandeIds }, boutique_id: { $in: boutiqueIds } })
+        .populate('produit_id', 'nom image_principale')
+        .lean()
+    ]);
+
+    const commandesMap = new Map();
+    for (const cmd of commandesRaw) {
+      commandesMap.set(String(cmd._id), { ...cmd, lignes: [] });
+    }
+    for (const l of lignes) {
+      const key = String(l.commande_id);
+      if (commandesMap.has(key)) commandesMap.get(key).lignes.push(l);
+    }
+
+    // Conserver l'ordre paginé calculé par agrégation.
+    const commandes = commandeIds
+      .map((id) => commandesMap.get(String(id)))
+      .filter(Boolean);
+
+    res.json({ success: true, count: commandes.length, total, page, pages: Math.ceil(total / limit), commandes });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Erreur recuperation commandes boutique', error: error.message });
   }

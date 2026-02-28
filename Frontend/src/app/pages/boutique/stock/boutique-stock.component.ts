@@ -679,7 +679,7 @@ export class BoutiqueStockComponent implements OnInit {
         height: 320,
         toolbar: { show: false },
         background: 'transparent',
-        animations: { enabled: true, speed: 800 }
+        animations: { enabled: false, speed: 800 }
       },
       stroke: { curve: 'smooth', width: 3 },
       colors: ['#ff4d4f', '#1677ff'],
@@ -712,7 +712,7 @@ export class BoutiqueStockComponent implements OnInit {
           height: 320,
           toolbar: { show: false },
           background: 'transparent',
-          animations: { enabled: true, speed: 800 }
+          animations: { enabled: false, speed: 800 }
         },
         plotOptions: {
           bar: { horizontal: true, borderRadius: 6, barHeight: '60%' }
