@@ -88,7 +88,10 @@
   color: white;
   font-size: 15px;
   padding: 16px 0;
-  &::placeholder { color: rgba(255, 255, 255, 0.45); }
+
+  &::placeholder {
+    color: rgba(255, 255, 255, 0.45);
+  }
 }
 
 .search-clear {
@@ -104,7 +107,10 @@
   font-size: 12px;
   cursor: pointer;
   transition: background 0.2s;
-  &:hover { background: rgba(255, 255, 255, 0.35); }
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.35);
+  }
 }
 
 // === Main Container ===
@@ -128,7 +134,9 @@
   padding: 16px 4px;
   -webkit-overflow-scrolling: touch;
 
-  &::-webkit-scrollbar { height: 0; }
+  &::-webkit-scrollbar {
+    height: 0;
+  }
 }
 
 .category-chip {
@@ -173,7 +181,10 @@
 .results-count {
   font-size: 14px;
   color: #8c8c8c;
-  strong { color: #262626; }
+
+  strong {
+    color: #262626;
+  }
 }
 
 .toolbar-right {
@@ -192,7 +203,10 @@
   cursor: pointer;
   outline: none;
   transition: border-color 0.2s;
-  &:focus { border-color: #667eea; }
+
+  &:focus {
+    border-color: #667eea;
+  }
 }
 
 .view-toggle {
@@ -216,84 +230,14 @@
     background: #667eea;
     color: white;
   }
+
   &:not(.active):hover {
     color: #667eea;
     background: #f8f9ff;
   }
 }
 
-// === Loading skeleton ===
-.loading-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 24px;
-}
-
-.skeleton-card {
-  background: white;
-  border-radius: 20px;
-  padding: 24px;
-  .skeleton-avatar {
-    width: 70px;
-    height: 70px;
-    border-radius: 50%;
-    background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-    margin: 0 auto 16px;
-  }
-  .skeleton-line {
-    height: 14px;
-    border-radius: 7px;
-    background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-    margin: 8px auto;
-    &.w-60 { width: 60%; }
-    &.w-40 { width: 40%; }
-    &.w-80 { width: 80%; }
-  }
-}
-
-@keyframes shimmer {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
-}
-
-// === Empty state ===
-.empty-state {
-  text-align: center;
-  padding: 60px 20px;
-
-  .empty-illustration {
-    font-size: 64px;
-    margin-bottom: 16px;
-  }
-
-  h3 {
-    font-weight: 700;
-    color: #262626;
-    margin-bottom: 8px;
-  }
-
-  p {
-    color: #8c8c8c;
-    max-width: 400px;
-    margin: 0 auto 20px;
-  }
-}
-
-.btn-reset {
-  padding: 10px 24px;
-  border-radius: 12px;
-  border: 1.5px solid #667eea;
-  background: white;
-  color: #667eea;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-  &:hover { background: #667eea; color: white; }
-}
+// Removed duplicated CSS blocks (loading skeletons, empty states) as they are now parsed globally in _shared-boutique-ui.scss
 
 // === Grid View ===
 .boutiques-grid {
@@ -319,8 +263,13 @@
     box-shadow: 0 20px 50px rgba(0, 0, 0, 0.1);
     border-color: transparent;
 
-    .card-banner-overlay { opacity: 0.25; }
-    .card-cta { opacity: 1; }
+    .card-banner-overlay {
+      opacity: 0.25;
+    }
+
+    .card-cta {
+      opacity: 1;
+    }
   }
 }
 
@@ -329,6 +278,7 @@
     opacity: 0;
     transform: translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -431,7 +381,8 @@
   margin-bottom: 16px;
 }
 
-.stars, .stars-sm {
+.stars,
+.stars-sm {
   display: flex;
   gap: 2px;
 }
@@ -439,7 +390,10 @@
 .star {
   color: #e8e8e8;
   font-size: 14px;
-  &.filled { color: #fbbf24; }
+
+  &.filled {
+    color: #fbbf24;
+  }
 }
 
 .rating-text {
@@ -506,7 +460,10 @@
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
     border-color: #667eea;
 
-    .btn-visit { background: #667eea; color: white; }
+    .btn-visit {
+      background: #667eea;
+      color: white;
+    }
   }
 }
 
@@ -571,11 +528,20 @@
   gap: 12px;
   flex-wrap: wrap;
 
-  .stars-sm .star { font-size: 12px; }
-  .rating-text { font-size: 12px; font-weight: 600; color: #262626; margin-left: 4px; }
+  .stars-sm .star {
+    font-size: 12px;
+  }
+
+  .rating-text {
+    font-size: 12px;
+    font-weight: 600;
+    color: #262626;
+    margin-left: 4px;
+  }
 }
 
-.list-avis, .list-views {
+.list-avis,
+.list-views {
   font-size: 12px;
   color: #bfbfbf;
 }
@@ -597,9 +563,17 @@
 
 // === Responsive ===
 @media (max-width: 768px) {
-  .hero-title { font-size: 1.8rem; }
-  .hero-subtitle { font-size: 0.95rem; }
-  .boutiques-hero { padding: 40px 0 35px; }
+  .hero-title {
+    font-size: 1.8rem;
+  }
+
+  .hero-subtitle {
+    font-size: 0.95rem;
+  }
+
+  .boutiques-hero {
+    padding: 40px 0 35px;
+  }
 
   .boutiques-grid {
     grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
@@ -613,15 +587,22 @@
     padding: 20px;
   }
 
-  .list-header { justify-content: center; }
-  .list-meta { justify-content: center; }
+  .list-header {
+    justify-content: center;
+  }
+
+  .list-meta {
+    justify-content: center;
+  }
 
   .toolbar {
     flex-direction: column;
     align-items: stretch;
   }
 
-  .toolbar-right { justify-content: space-between; }
+  .toolbar-right {
+    justify-content: space-between;
+  }
 }
 
 @media (max-width: 480px) {
@@ -629,7 +610,11 @@
     grid-template-columns: 1fr;
   }
 
-  .card-banner { height: 80px; }
-  .card-content { padding: 14px 18px 18px; }
-}
+  .card-banner {
+    height: 80px;
+  }
 
+  .card-content {
+    padding: 14px 18px 18px;
+  }
+}
