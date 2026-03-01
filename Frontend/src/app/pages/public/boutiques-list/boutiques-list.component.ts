@@ -1,8 +1,10 @@
-import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
+import { ApiService } from '../../../services/api.service';
+import { AuthService } from '../../../services/auth.service';
 import { environment } from '../../../../environments/environment';
 
 interface Boutique {
@@ -28,6 +30,8 @@ interface Boutique {
   imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './boutiques-list.component.html',
   styleUrls: ['./boutiques-list.component.scss']
+  ,
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class BoutiquesListComponent implements OnInit {
   private http = inject(HttpClient);
@@ -42,6 +46,8 @@ export class BoutiquesListComponent implements OnInit {
   categories: string[] = [];
   viewMode: 'grid' | 'list' = 'grid';
   sortBy: 'nom' | 'note' | 'recent' = 'nom';
+  favorisIds: Set<string> = new Set();
+  favAnimation: { [key: string]: boolean } = {};
 
   ngOnInit(): void {
     this.http.get<any>(`${this.apiUrl}/boutiques`).subscribe({
@@ -60,6 +66,7 @@ export class BoutiquesListComponent implements OnInit {
         this.cdr.detectChanges();
       }
     });
+    this.loadFavoris();
   }
 
   extractCategories(): void {
@@ -136,5 +143,61 @@ export class BoutiquesListComponent implements OnInit {
     this.selectedCategorie = '';
     this.sortBy = 'nom';
     this.applyFilters();
+  }
+
+  // ----- favoris logic -----
+  private api = inject(ApiService);
+  private auth = inject(AuthService);
+  private router = inject(Router);
+
+  loadFavoris(): void {
+    if (!this.auth.isLoggedIn) return;
+    this.api.getMyFavoris('boutique').subscribe({
+      next: (res) => {
+        if (res.success && res.favoris) {
+          this.favorisIds = new Set(
+            res.favoris
+              .map((f: any) => f.boutique_id?._id || f.boutique_id)
+              .filter(Boolean)
+          );
+        }
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  isFavori(boutiqueId: string): boolean {
+    return this.favorisIds.has(boutiqueId);
+  }
+
+  toggleFavori(boutiqueId: string, event: Event): void {
+    event.stopPropagation();
+    event.preventDefault();
+    if (!this.auth.isLoggedIn) {
+      this.router.navigate(['/login']);
+      return;
+    }
+    this.favAnimation[boutiqueId] = true;
+    this.api.toggleFavori('boutique', undefined, boutiqueId).subscribe({
+      next: (res) => {
+        if (this.favorisIds.has(boutiqueId)) {
+          this.favorisIds.delete(boutiqueId);
+        } else {
+          this.favorisIds.add(boutiqueId);
+        }
+        setTimeout(() => {
+          this.favAnimation[boutiqueId] = false;
+          this.cdr.detectChanges();
+        }, 600);
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.favAnimation[boutiqueId] = false;
+        this.cdr.detectChanges();
+      }
+    });
   }
 }

@@ -1,15 +1,7 @@
-<!-- Loading -->
-@if (loading) {
-  <div class="text-center py-5">
-    <div class="spinner-border text-primary spinner-border-lg" role="status"></div>
-    <p class="mt-3 text-muted">Chargement des données de bénéfice...</p>
-  </div>
-}
-
 @if (!loading) {
   <!-- Alerte si peu de prix d'achat renseignés -->
   @if (nbProduitsAvecPrixAchat < nbProduits) {
-    <div class="alert alert-warning d-flex align-items-center gap-2 mb-4 fade-in animated">
+    <div class="alert alert-warning d-flex align-items-center gap-2 mb-4">
       <i antIcon type="warning" theme="outline" style="font-size: 20px;"></i>
       <div>
         <strong>{{ nbProduitsAvecPrixAchat }}/{{ nbProduits }}</strong> produits ont un prix d'achat renseigné.
@@ -20,7 +12,7 @@
 
   <!-- 🔝 Stats rapides -->
   <div class="row mb-4">
-    <div class="col-md-6 col-xl-3 mb-3 fade-in animated">
+    <div class="col-md-6 col-xl-3 mb-3">
       <div class="stat-card stat-card-primary">
         <div class="stat-card-body">
           <div class="stat-icon-wrapper stat-icon-primary">
@@ -35,7 +27,7 @@
       </div>
     </div>
 
-    <div class="col-md-6 col-xl-3 mb-3 fade-in animated" style="animation-delay: 100ms">
+    <div class="col-md-6 col-xl-3 mb-3">
       <div class="stat-card stat-card-danger">
         <div class="stat-card-body">
           <div class="stat-icon-wrapper stat-icon-danger">
@@ -50,7 +42,7 @@
       </div>
     </div>
 
-    <div class="col-md-6 col-xl-3 mb-3 fade-in animated" style="animation-delay: 200ms">
+    <div class="col-md-6 col-xl-3 mb-3">
       <div class="stat-card stat-card-success">
         <div class="stat-card-body">
           <div class="stat-icon-wrapper stat-icon-success">
@@ -67,7 +59,7 @@
       </div>
     </div>
 
-    <div class="col-md-6 col-xl-3 mb-3 fade-in animated" style="animation-delay: 300ms">
+    <div class="col-md-6 col-xl-3 mb-3">
       <div class="stat-card stat-card-warning">
         <div class="stat-card-body">
           <div class="stat-icon-wrapper stat-icon-warning">
@@ -84,7 +76,7 @@
   </div>
 
   <!-- Valeur stock info -->
-  <div class="row mb-4 fade-in animated" style="animation-delay: 350ms">
+  <div class="row mb-4">
     <div class="col-md-4 mb-3">
       <div class="info-card">
         <div class="info-card-icon bg-blue-light">
@@ -122,7 +114,7 @@
 
   <!-- Graphiques -->
   <div class="row mb-4">
-    <div class="col-lg-7 mb-3 slide-in-left animated">
+    <div class="col-lg-7 mb-3">
       <app-card cardTitle="📊 Évolution CA / Coût / Bénéfice (6 mois)">
         @if (evolutionChartOptions) {
           <apx-chart
@@ -143,7 +135,7 @@
       </app-card>
     </div>
 
-    <div class="col-lg-5 mb-3 slide-in-right animated">
+    <div class="col-lg-5 mb-3">
       <app-card cardTitle="🍩 Bénéfice par catégorie">
         @if (categorieChartOptions) {
           <apx-chart
@@ -165,7 +157,7 @@
   <!-- Top produits bénéfice -->
   @if (topProduitsChartOptions) {
     <div class="row mb-4">
-      <div class="col-12 slide-in-up animated">
+      <div class="col-12">
         <app-card cardTitle="🏆 Top 10 produits les plus rentables">
           <apx-chart
             [series]="$any(topProduitsChartOptions.series)"
@@ -183,7 +175,7 @@
   }
 
   <!-- Filtres tableau -->
-  <app-card class="slide-in-up animated">
+  <app-card>
     <div class="row g-3 align-items-end">
       <div class="col-md-3">
         <label class="form-label fw-semibold">
@@ -221,7 +213,7 @@
   </app-card>
 
   <!-- Tableau détaillé des bénéfices -->
-  <app-card cardTitle="💰 Détail des bénéfices par produit ({{ produitsFiltres.length }})" class="mt-3 slide-in-up animated">
+  <app-card cardTitle="💰 Détail des bénéfices par produit ({{ produitsFiltres.length }})" class="mt-3">
     <div class="table-responsive">
       <table class="table table-hover align-middle stock-table">
         <thead class="table-light">
@@ -334,7 +326,7 @@
 
   <!-- Résumé par catégorie -->
   @if (parCategorie.length > 0) {
-    <app-card cardTitle="📋 Résumé par catégorie" class="mt-3 slide-in-up animated">
+    <app-card cardTitle="📋 Résumé par catégorie" class="mt-3">
       <div class="table-responsive">
         <table class="table table-hover align-middle stock-table">
           <thead class="table-light">

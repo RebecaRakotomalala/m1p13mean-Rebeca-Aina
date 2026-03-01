@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../../services/api.service';
@@ -7,6 +7,7 @@ import { CardComponent } from '../../../theme/shared/components/card/card.compon
 @Component({
   selector: 'app-admin-boutiques',
   imports: [CommonModule, FormsModule, CardComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <app-card cardTitle="Gestion des Boutiques">
       <div class="row g-2 mb-3 align-items-center">
@@ -305,6 +306,7 @@ export class AdminBoutiquesComponent implements OnInit {
   private searchTimer: any = null;
   countEnAttente = 0;
   selectedBoutique: any = null;
+    private cdr = inject(ChangeDetectorRef);
   boutiqueStats: any = null;
   editingEmplacement: any = null;
   emplacementForm: any = { numero_emplacement: '', etage: '', zone: '', surface_m2: null };
@@ -330,6 +332,7 @@ export class AdminBoutiquesComponent implements OnInit {
           this.countEnAttente = this.boutiques.filter(b => b.statut === 'en_attente').length;
         }
         this.loading = false;
+        this.cdr.markForCheck();
       },
       error: (err) => {
         this.loading = false;
