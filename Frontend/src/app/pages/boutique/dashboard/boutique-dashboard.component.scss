@@ -1,0 +1,27 @@
+// Animations, Stat Cards, Product Tables, and Pagination have been moved to _shared-admin-ui.scss globally.
+
+.spinner-border-lg {
+  will-change: transform;
+  contain: layout style paint;
+}
+
+.stat-card-footer {
+  padding-top: 1rem;
+  border-top: 1px solid #f0f0f0;
+  margin-top: 0.75rem;
+}
+
+// === RESPONSIVE ===
+@media (max-width: 768px) {
+  .stat-card {
+    margin-bottom: 0.5rem;
+  }
+
+  .stat-value {
+    font-size: 1.25rem;
+  }
+
+  .table-responsive {
+    font-size: 0.875rem;
+  }
+}

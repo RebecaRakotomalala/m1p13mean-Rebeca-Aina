@@ -43,6 +43,11 @@ const produitSchema = new mongoose.Schema({
     required: true,
     min: 0
   },
+  prix_achat: {
+    type: Number,
+    default: 0,
+    min: 0
+  },
   prix_promo: Number,
   pourcentage_reduction: Number,
   date_debut_promo: Date,
@@ -158,6 +163,8 @@ produitSchema.index({ categorie: 1 });
 produitSchema.index({ prix_initial: 1 });
 produitSchema.index({ stock_quantite: 1 });
 produitSchema.index({ actif: 1 });
+produitSchema.index({ boutique_id: 1, date_creation: -1 });
+produitSchema.index({ boutique_id: 1, actif: 1, categorie: 1 });
 produitSchema.index({ nom: 'text', description_courte: 'text', description_longue: 'text' });
 
 module.exports = mongoose.model('Produit', produitSchema, 'produits');

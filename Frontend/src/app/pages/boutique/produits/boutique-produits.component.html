@@ -1,0 +1,642 @@
+<!-- Loading -->
+@if (loading && produits.length === 0) {
+  <div class="text-center py-5" style="min-height: 50vh; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+    <div class="spinner-border text-primary spinner-border-lg" role="status" style="width: 3rem; height: 3rem;"></div>
+    <p class="mt-3 text-muted">Chargement des produits...</p>
+  </div>
+}
+
+@if (!loading || produits.length > 0) {
+  <!-- 🔝 Stats rapides -->
+  @if (!showForm) {
+    <div class="row mb-4">
+      <div class="col-md-6 col-xl-3 mb-3">
+        <div class="stat-card stat-card-primary">
+          <div class="stat-card-body">
+            <div class="stat-icon-wrapper stat-icon-primary">
+              <i antIcon type="inbox" theme="outline" class="stat-icon-i"></i>
+            </div>
+            <div class="stat-info">
+              <span class="stat-value">{{ produits.length }}</span>
+              <span class="stat-label">Total produits</span>
+              <span class="stat-sub">{{ produitsFiltres.length }} affiché(s)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-xl-3 mb-3">
+        <div class="stat-card stat-card-success">
+          <div class="stat-card-body">
+            <div class="stat-icon-wrapper stat-icon-success">
+              <i antIcon type="appstore" theme="outline" class="stat-icon-i"></i>
+            </div>
+            <div class="stat-info">
+              <span class="stat-value text-success">{{ categories.length }}</span>
+              <span class="stat-label">Catégories</span>
+              <span class="stat-sub">Diversité produit</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-xl-3 mb-3">
+        <div class="stat-card stat-card-warning">
+          <div class="stat-card-body">
+            <div class="stat-icon-wrapper stat-icon-warning">
+              <i antIcon type="eye" theme="outline" class="stat-icon-i"></i>
+            </div>
+            <div class="stat-info">
+              <span class="stat-value text-warning">{{ getActiveCount() }}</span>
+              <span class="stat-label">Actifs</span>
+              <span class="stat-sub">Produits en ligne</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-xl-3 mb-3">
+        <div class="stat-card stat-card-danger">
+          <div class="stat-card-body">
+            <div class="stat-icon-wrapper stat-icon-danger">
+              <i antIcon type="delete" theme="outline" class="stat-icon-i"></i>
+            </div>
+            <div class="stat-info">
+              <span class="stat-value text-danger">{{ getOutOfStockCount() }}</span>
+              <span class="stat-label">En rupture</span>
+              <span class="stat-sub">Réapprovisionner</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+<div class="row">
+  <div class="col-12">
+    <app-card [cardTitle]="showForm ? (editingProduit ? 'Modifier le Produit' : 'Ajouter un Produit') : ''">
+
+      <!-- Barre de recherche et filtres -->
+      @if (!showForm) {
+        <div>
+          <div class="row g-3 align-items-end mb-3">
+            <!-- Recherche -->
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">
+                <i antIcon type="search" theme="outline" class="me-1"></i> Rechercher
+              </label>
+              <input 
+                type="text" 
+                class="form-control" 
+                placeholder="Nom du produit..." 
+                [(ngModel)]="searchTerm"
+                (ngModelChange)="applyFilters()"
+              />
+            </div>
+            
+            <!-- Filtre catégorie -->
+            <div class="col-md-2">
+              <label class="form-label fw-semibold">Catégorie</label>
+              <select class="form-select" [(ngModel)]="filterCategorie" (ngModelChange)="applyFilters()">
+                <option value="">Toutes</option>
+                @for (cat of categories; track cat) {
+                  <option [value]="cat">{{ cat }}</option>
+                }
+              </select>
+            </div>
+            
+            <!-- Filtre stock -->
+            <div class="col-md-2">
+              <label class="form-label fw-semibold">Stock</label>
+              <select class="form-select" [(ngModel)]="filterStock" (ngModelChange)="applyFilters()">
+                <option value="all">Tous</option>
+                <option value="in_stock">En stock ✓</option>
+                <option value="low">Faible ⚠</option>
+                <option value="out_of_stock">Rupture ✕</option>
+              </select>
+            </div>
+            
+            <!-- Filtre actif -->
+            <div class="col-md-2">
+              <label class="form-label fw-semibold">Statut</label>
+              <select class="form-select" [(ngModel)]="filterActif" (ngModelChange)="applyFilters()">
+                <option value="all">Tous</option>
+                <option value="active">Actifs</option>
+                <option value="inactive">Inactifs</option>
+              </select>
+            </div>
+
+            <!-- Vue + Ajouter -->
+            <div class="col-md-2">
+              <div class="d-flex gap-2">
+                <div class="btn-group" role="group">
+                  <button type="button" class="btn btn-outline-secondary btn-sm"
+                    [class.active]="viewMode === 'grid'" (click)="viewMode = 'grid'" title="Vue grille">
+                    <i antIcon type="appstore" theme="outline"></i>
+                  </button>
+                  <button type="button" class="btn btn-outline-secondary btn-sm"
+                    [class.active]="viewMode === 'table'" (click)="viewMode = 'table'" title="Vue tableau">
+                    <i antIcon type="unordered-list" theme="outline"></i>
+                  </button>
+                </div>
+                <button class="btn btn-primary btn-sm" (click)="showForm = true; resetForm()" title="Ajouter un produit">
+                  <i antIcon type="plus" theme="outline"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- Formulaire -->
+      @if (showForm) {
+        <div>
+          @if (errorMessage) {
+            <div class="alert alert-danger">{{ errorMessage }}</div>
+          }
+          
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Nom du produit *</label>
+              <input type="text" class="form-control" [(ngModel)]="form.nom" placeholder="Ex: T-shirt en coton" />
+            </div>
+            
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Catégorie *</label>
+              <input type="text" class="form-control" [(ngModel)]="form.categorie" placeholder="Ex: Vêtements" list="categories-list" />
+              <datalist id="categories-list">
+                @for (cat of categories; track cat) {
+                  <option [value]="cat"></option>
+                }
+              </datalist>
+            </div>
+            
+            <div class="col-md-4 mb-3">
+              <label class="form-label">Prix initial (Ar) *</label>
+              <input type="number" class="form-control" [(ngModel)]="form.prix_initial" min="0" step="100" />
+            </div>
+            
+            <div class="col-md-4 mb-3">
+              <label class="form-label">Stock</label>
+              <input type="number" class="form-control" [(ngModel)]="form.stock_quantite" min="0" />
+            </div>
+
+            <!-- Gestion promotion -->
+            <div class="col-12 mb-3">
+              <div class="border rounded-3 p-3 bg-light-subtle">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                  <h6 class="mb-0">Promotion</h6>
+                  <div class="form-check form-switch m-0">
+                    <input class="form-check-input" type="checkbox" id="promo-enabled" [(ngModel)]="promoEnabled" (ngModelChange)="onPromoToggle()" />
+                    <label class="form-check-label ms-1" for="promo-enabled">
+                      {{ promoEnabled ? 'Activée' : 'Désactivée' }}
+                    </label>
+                  </div>
+                </div>
+
+                @if (promoEnabled) {
+                  <div class="row g-3">
+                    <div class="col-md-4">
+                      <label class="form-label">Prix promotionnel (Ar) *</label>
+                      <input type="number" class="form-control" [(ngModel)]="form.prix_promo" min="0" step="100" />
+                    </div>
+                    <div class="col-md-4">
+                      <label class="form-label">Début promo</label>
+                      <input type="date" class="form-control" [(ngModel)]="form.date_debut_promo" />
+                    </div>
+                    <div class="col-md-4">
+                      <label class="form-label">Fin promo</label>
+                      <input type="date" class="form-control" [(ngModel)]="form.date_fin_promo" />
+                    </div>
+                  </div>
+                  <div class="mt-2">
+                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle">
+                      Réduction estimée: {{ getCalculatedReduction() }}%
+                    </span>
+                  </div>
+                } @else {
+                  <small class="text-muted">Activez la promotion pour définir un prix promo et une période.</small>
+                }
+              </div>
+            </div>
+            
+            <div class="col-md-6 mb-3">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" [(ngModel)]="form.stock_illimite" id="stock-illimite">
+                <label class="form-check-label" for="stock-illimite">
+                  Stock illimité
+                </label>
+              </div>
+            </div>
+            
+            <div class="col-md-6 mb-3">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" [(ngModel)]="form.actif" id="actif">
+                <label class="form-check-label" for="actif">
+                  Produit actif
+                </label>
+              </div>
+            </div>
+            
+            <div class="col-12 mb-3">
+              <label class="form-label">Description courte</label>
+              <textarea class="form-control" rows="2" [(ngModel)]="form.description_courte" placeholder="Description brève du produit"></textarea>
+            </div>
+            
+            <div class="col-12 mb-3">
+              <label class="form-label">Description longue</label>
+              <textarea class="form-control" rows="4" [(ngModel)]="form.description_longue" placeholder="Description détaillée du produit"></textarea>
+            </div>
+            
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Sous-catégorie</label>
+              <input type="text" class="form-control" [(ngModel)]="form.sous_categorie" placeholder="Ex: T-shirts" />
+            </div>
+            
+            <div class="col-md-6 mb-3">
+              <div class="row">
+                <div class="col-6">
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" [(ngModel)]="form.nouveau" id="nouveau">
+                    <label class="form-check-label" for="nouveau">
+                      Nouveau
+                    </label>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" [(ngModel)]="form.coup_de_coeur" id="coup-de-coeur">
+                    <label class="form-check-label" for="coup-de-coeur">
+                      Coup de cœur
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Upload image -->
+            <div class="col-12 mb-3">
+              <label class="form-label">Image principale</label>
+              <div class="d-flex gap-3 align-items-center">
+                @if (form.image_principale) {
+                  <img [src]="form.image_principale" alt="Preview" class="img-thumbnail" style="width: 150px; height: 150px; object-fit: cover;" />
+                }
+                <div class="flex-grow-1">
+                  <input 
+                    #imageInput
+                    type="file" 
+                    accept="image/*" 
+                    class="form-control" 
+                    (change)="onImageSelected($event)"
+                    [disabled]="uploadingImage"
+                  />
+                  @if (uploadingImage) {
+                    <div class="mt-2">
+                      <span class="spinner-border spinner-border-sm me-2"></span>
+                      <small class="text-muted">Upload en cours...</small>
+                    </div>
+                  }
+                  @if (form.image_principale && !uploadingImage) {
+                    <small class="text-muted d-block mt-1">Image uploadée avec succès</small>
+                  }
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="d-flex gap-2">
+            <button class="btn btn-primary" (click)="saveProduit()" [disabled]="loading || uploadingImage">
+              @if (loading) {
+                <span class="spinner-border spinner-border-sm me-2"></span>
+                Enregistrement...
+              } @else {
+                {{ editingProduit ? 'Modifier' : 'Créer' }}
+              }
+            </button>
+            <button class="btn btn-secondary" (click)="showForm = false; resetForm()">Annuler</button>
+          </div>
+        </div>
+      }
+
+      <!-- Liste des produits -->
+      @if (!showForm) {
+        @if (loading && produits.length === 0) {
+          <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Chargement...</span>
+            </div>
+            <p class="mt-3 text-muted">Chargement des produits...</p>
+          </div>
+        } @else if (produitsFiltres.length === 0) {
+          <div class="text-center py-5 text-muted">
+            <i antIcon type="inbox" theme="outline" style="font-size: 64px; opacity: 0.3;" class="f-64"></i>
+            <p class="mt-3">
+              @if (produits.length === 0) {
+                Aucun produit. Ajoutez votre premier produit !
+              } @else {
+                Aucun produit ne correspond à vos critères de recherche.
+              }
+            </p>
+          </div>
+        } @else {
+          <!-- Vue grille -->
+          @if (viewMode === 'grid') {
+            <div class="row g-4">
+              @for (produit of produitsFiltres; track produit._id) {
+                <div class="col-md-4 col-lg-3">
+                  <div class="card h-100 product-card">
+                    <div class="position-relative">
+                      <img 
+                        [src]="produit.image_principale || 'assets/images/authentication/img-placeholder.svg'" 
+                        class="card-img-top" 
+                        [alt]="produit.nom"
+                        style="height: 200px; object-fit: cover; cursor: pointer;"
+                        (click)="viewDetails(produit)"
+                      />
+                      <div class="position-absolute top-0 end-0 p-2">
+                        @if (produit.nouveau) {
+                          <span class="badge bg-success">Nouveau</span>
+                        }
+                        @if (produit.coup_de_coeur) {
+                          <span class="badge bg-danger">❤️</span>
+                        }
+                        @if (!produit.actif) {
+                          <span class="badge bg-secondary">Inactif</span>
+                        }
+                      </div>
+                    </div>
+                    <div class="card-body d-flex flex-column">
+                      <h6 class="card-title">{{ produit.nom }}</h6>
+                      <p class="card-text text-muted small mb-2">{{ produit.categorie }}</p>
+                      @if (produit.description_courte) {
+                        <p class="card-text small text-muted flex-grow-1">{{ produit.description_courte | slice:0:80 }}{{ produit.description_courte.length > 80 ? '...' : '' }}</p>
+                      }
+                      <div class="mt-auto">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                          <div>
+                            @if (produit.prix_promo) {
+                              <span class="text-decoration-line-through text-muted small me-2">{{ produit.prix_initial | number:'1.0-0' }} Ar</span>
+                              <strong class="text-danger">{{ produit.prix_promo | number:'1.0-0' }} Ar</strong>
+                            } @else {
+                              <strong>{{ produit.prix_initial | number:'1.0-0' }} Ar</strong>
+                            }
+                          </div>
+                          <span [ngClass]="getStockClass(produit)" class="small">
+                            Stock: {{ getStockText(produit) }}
+                          </span>
+                        </div>
+                        <div class="d-flex gap-2">
+                          <button class="btn btn-sm btn-outline-info flex-fill" (click)="viewDetails(produit)">
+                            <i antIcon type="eye" theme="outline" class="me-1 f-14"></i> Détails
+                          </button>
+                          <button class="btn btn-sm btn-outline-primary" (click)="editProduit(produit)" title="Modifier">
+                            <i antIcon type="edit" theme="outline" class="f-14"></i>
+                          </button>
+                          <button class="btn btn-sm btn-outline-danger" (click)="deleteProduit(produit._id!)" title="Supprimer">
+                            <i antIcon type="delete" theme="outline" class="f-14"></i>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+          
+          <!-- Vue tableau -->
+          @if (viewMode === 'table') {
+            <div class="table-responsive">
+              <table class="table table-hover align-middle stock-table">
+                <thead class="table-light">
+                  <tr>
+                    <th></th>
+                    <th>Produit</th>
+                    <th>Catégorie</th>
+                    <th>Prix</th>
+                    <th>Stock</th>
+                    <th>Ventes</th>
+                    <th>Statut</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (produit of paginatedProduits; track produit._id) {
+                    <tr [class.table-danger]="!produit.stock_illimite && produit.stock_quantite === 0"
+                        [class.table-warning]="!produit.stock_illimite && produit.stock_quantite > 0 && produit.stock_quantite < 5">
+                      <td>
+                        @if (produit.image_principale) {
+                          <img [src]="produit.image_principale" [alt]="produit.nom" class="product-thumb" (click)="viewDetails(produit)" style="cursor:pointer">
+                        } @else {
+                          <div class="product-thumb-placeholder" (click)="viewDetails(produit)" style="cursor:pointer">
+                            <i antIcon type="inbox" theme="outline"></i>
+                          </div>
+                        }
+                      </td>
+                      <td>
+                        <strong>{{ produit.nom }}</strong>
+                        @if (produit.nouveau) {
+                          <span class="badge bg-success ms-1">Nouveau</span>
+                        }
+                        @if (produit.coup_de_coeur) {
+                          <span class="badge bg-danger ms-1">❤️</span>
+                        }
+                      </td>
+                      <td><span class="badge bg-light text-dark">{{ produit.categorie }}</span></td>
+                      <td>
+                        @if (produit.prix_promo) {
+                          <span class="text-decoration-line-through text-muted small">{{ produit.prix_initial | number:'1.0-0' }}</span>
+                          <br>
+                          <strong class="text-danger">{{ produit.prix_promo | number:'1.0-0' }} Ar</strong>
+                        } @else {
+                          <strong>{{ produit.prix_initial | number:'1.0-0' }} Ar</strong>
+                        }
+                      </td>
+                      <td>
+                        <div class="stock-display">
+                          <span class="stock-badge" [ngClass]="{
+                            'badge-success': produit.stock_illimite || produit.stock_quantite >= 5,
+                            'badge-warning': !produit.stock_illimite && produit.stock_quantite > 0 && produit.stock_quantite < 5,
+                            'badge-danger': !produit.stock_illimite && produit.stock_quantite === 0,
+                            'badge-unlimited': produit.stock_illimite
+                          }">
+                            {{ getStockText(produit) }}
+                          </span>
+                          @if (!produit.stock_illimite) {
+                            <div class="progress mt-1" style="height: 4px">
+                              <div class="progress-bar" 
+                                [ngClass]="{
+                                  'bg-success': produit.stock_quantite >= 5,
+                                  'bg-warning': produit.stock_quantite > 0 && produit.stock_quantite < 5,
+                                  'bg-danger': produit.stock_quantite === 0
+                                }"
+                                [style.width.%]="produit.stock_quantite === 0 ? 0 : Math.min(100, (produit.stock_quantite / Math.max(produit.stock_quantite, 20)) * 100)">
+                              </div>
+                            </div>
+                          }
+                        </div>
+                      </td>
+                      <td>
+                        <span class="badge bg-primary bg-opacity-10 text-primary">{{ produit.nombre_ventes || 0 }}</span>
+                      </td>
+                      <td>
+                        <button 
+                          class="btn btn-sm"
+                          [class.btn-success]="produit.actif"
+                          [class.btn-secondary]="!produit.actif"
+                          (click)="toggleActif(produit)"
+                          title="Cliquez pour changer le statut"
+                        >
+                          {{ produit.actif ? 'Actif' : 'Inactif' }}
+                        </button>
+                      </td>
+                      <td>
+                        <button class="btn btn-sm btn-outline-info me-1" (click)="viewDetails(produit)" title="Voir détails">
+                          <i antIcon type="eye" theme="outline" class="f-14"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-primary me-1" (click)="editProduit(produit)" title="Modifier">
+                          <i antIcon type="edit" theme="outline" class="f-14"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" (click)="deleteProduit(produit._id!)" title="Supprimer">
+                          <i antIcon type="delete" theme="outline" class="f-14"></i>
+                        </button>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Pagination -->
+            @if (produitsFiltres.length > pageSize) {
+              <div class="d-flex justify-content-between align-items-center mt-3 px-2">
+                <small class="text-muted">
+                  Affichage {{ (currentPage - 1) * pageSize + 1 }} - {{ currentPage * pageSize > produitsFiltres.length ? produitsFiltres.length : currentPage * pageSize }} sur {{ produitsFiltres.length }} produits
+                </small>
+                <nav>
+                  <ul class="pagination pagination-sm mb-0">
+                    <li class="page-item" [class.disabled]="currentPage === 1">
+                      <button class="page-link" (click)="goToPage(currentPage - 1)">‹</button>
+                    </li>
+                    @for (page of pages; track $index) {
+                      @if (page === -1) {
+                        <li class="page-item disabled"><span class="page-link">…</span></li>
+                      } @else {
+                        <li class="page-item" [class.active]="page === currentPage">
+                          <button class="page-link" (click)="goToPage(page)">{{ page }}</button>
+                        </li>
+                      }
+                    }
+                    <li class="page-item" [class.disabled]="currentPage === totalPages">
+                      <button class="page-link" (click)="goToPage(currentPage + 1)">›</button>
+                    </li>
+                  </ul>
+                </nav>
+              </div>
+            }
+          }
+        }
+      }
+    </app-card>
+  </div>
+</div>
+}
+
+<!-- Modal détails produit -->
+@if (showDetailsModal && selectedProduit) {
+  <div class="modal-backdrop fade show" (click)="closeDetailsModal()" style="z-index: 1050;"></div>
+  <div class="modal fade show d-block" tabindex="-1" role="dialog" style="z-index: 1055;">
+    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">{{ selectedProduit.nom }}</h5>
+          <button type="button" class="btn-close" (click)="closeDetailsModal()" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <img 
+                [src]="selectedProduit.image_principale || 'assets/images/authentication/img-placeholder.svg'" 
+                class="img-fluid rounded" 
+                [alt]="selectedProduit.nom"
+              />
+            </div>
+            <div class="col-md-6">
+              <h6>Informations</h6>
+              <table class="table table-sm">
+                <tr>
+                  <td><strong>Catégorie:</strong></td>
+                  <td>{{ selectedProduit.categorie }}</td>
+                </tr>
+                @if (selectedProduit.sous_categorie) {
+                  <tr>
+                    <td><strong>Sous-catégorie:</strong></td>
+                    <td>{{ selectedProduit.sous_categorie }}</td>
+                  </tr>
+                }
+                <tr>
+                  <td><strong>Prix:</strong></td>
+                  <td>
+                    @if (selectedProduit.prix_promo) {
+                      <span class="text-decoration-line-through text-muted me-2">{{ selectedProduit.prix_initial | number:'1.0-0' }} Ar</span>
+                      <strong class="text-danger">{{ selectedProduit.prix_promo | number:'1.0-0' }} Ar</strong>
+                    } @else {
+                      <strong>{{ selectedProduit.prix_initial | number:'1.0-0' }} Ar</strong>
+                    }
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>Stock:</strong></td>
+                  <td>
+                    <span [ngClass]="getStockClass(selectedProduit)">{{ getStockText(selectedProduit) }}</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>Ventes:</strong></td>
+                  <td>{{ selectedProduit.nombre_ventes || 0 }}</td>
+                </tr>
+                <tr>
+                  <td><strong>Statut:</strong></td>
+                  <td>
+                    <span [class]="selectedProduit.actif ? 'badge bg-success' : 'badge bg-secondary'">
+                      {{ selectedProduit.actif ? 'Actif' : 'Inactif' }}
+                    </span>
+                  </td>
+                </tr>
+                @if (selectedProduit.nouveau) {
+                  <tr>
+                    <td colspan="2"><span class="badge bg-success">Nouveau produit</span></td>
+                  </tr>
+                }
+                @if (selectedProduit.coup_de_coeur) {
+                  <tr>
+                    <td colspan="2"><span class="badge bg-danger">Coup de cœur</span></td>
+                  </tr>
+                }
+              </table>
+            </div>
+            @if (selectedProduit.description_courte) {
+              <div class="col-12 mb-3">
+                <h6>Description courte</h6>
+                <p>{{ selectedProduit.description_courte }}</p>
+              </div>
+            }
+            @if (selectedProduit.description_longue) {
+              <div class="col-12">
+                <h6>Description longue</h6>
+                <p>{{ selectedProduit.description_longue }}</p>
+              </div>
+            }
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeDetailsModal()">Fermer</button>
+          <button type="button" class="btn btn-primary" (click)="editProduit(selectedProduit); closeDetailsModal();">
+            <i antIcon type="edit" theme="outline" class="me-2 f-14"></i>Modifier
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+

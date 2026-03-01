@@ -1,0 +1,141 @@
+<div class="auth-page">
+  <!-- Left panel - Illustration -->
+  <div class="auth-left">
+    <div class="auth-left-content">
+      <div class="auth-left-shapes">
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+        <div class="shape shape-3"></div>
+      </div>
+      <div class="auth-branding">
+        <img src="assets/images/logo4.png" alt="MallConnect" class="auth-logo" />
+        <h2 class="auth-tagline">Bienvenue sur <strong>MallConnect</strong></h2>
+        <p class="auth-description">
+          Votre centre commercial digital. Connectez-vous pour accéder à vos boutiques préférées, votre panier et bien plus encore.
+        </p>
+        <div class="auth-features">
+          <div class="auth-feature">
+            <div class="feature-icon">🛍️</div>
+            <span>Des centaines de boutiques</span>
+          </div>
+          <div class="auth-feature">
+            <div class="feature-icon">📦</div>
+            <span>Livraison rapide</span>
+          </div>
+          <div class="auth-feature">
+            <div class="feature-icon">🔒</div>
+            <span>Paiement sécurisé</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right panel - Form -->
+  <div class="auth-right">
+    <div class="auth-form-container auth-form-card">
+      <!-- Mobile logo -->
+      <div class="auth-mobile-logo">
+        <a routerLink="/">
+          <img src="assets/images/logo4.png" alt="MallConnect" style="height: 50px; width: auto;" />
+        </a>
+      </div>
+
+      <div class="auth-form-header">
+        <span class="auth-form-badge">Espace client</span>
+        <h2 class="auth-form-title">Connexion</h2>
+        <p class="auth-form-subtitle">Entrez vos identifiants pour continuer</p>
+      </div>
+
+      <div class="auth-quick-login">
+        <span class="quick-login-label">Connexion rapide :</span>
+        <div class="quick-login-buttons">
+          <button type="button" class="quick-login-btn" (click)="fillTestCredentials('admin')">Admin</button>
+          <button type="button" class="quick-login-btn" (click)="fillTestCredentials('boutique')">Boutique</button>
+          <button type="button" class="quick-login-btn" (click)="fillTestCredentials('client')">Acheteur</button>
+        </div>
+      </div>
+
+      @if (errorMessage) {
+        <div class="auth-alert">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
+          </svg>
+          {{ errorMessage }}
+        </div>
+      }
+
+      <div class="auth-field">
+        <label class="auth-label" for="email">Adresse email</label>
+        <div class="auth-input-wrap">
+          <svg class="auth-input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+            <polyline points="22,6 12,13 2,6"/>
+          </svg>
+          <input type="email" class="auth-input" id="email" placeholder="votre@email.com" [(ngModel)]="email" />
+        </div>
+      </div>
+
+      <div class="auth-field">
+        <label class="auth-label" for="password">Mot de passe</label>
+        <div class="auth-input-wrap">
+          <svg class="auth-input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+          <input [type]="showPassword ? 'text' : 'password'" class="auth-input" id="password" placeholder="Votre mot de passe" [(ngModel)]="password" (keyup.enter)="onLogin()" />
+          <button class="auth-toggle-password" type="button" (click)="togglePasswordVisibility()" [attr.aria-label]="showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'">
+            @if (!showPassword) {
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+            } @else {
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20C5 20 1 12 1 12a21.86 21.86 0 0 1 5.06-6.94"></path>
+                <path d="M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a22.3 22.3 0 0 1-3.17 4.62"></path>
+                <line x1="1" y1="1" x2="23" y2="23"></line>
+              </svg>
+            }
+          </button>
+        </div>
+      </div>
+
+      <div class="auth-row">
+        <label class="auth-remember">
+          <input type="checkbox" [(ngModel)]="rememberMe" />
+          <span>Se souvenir de moi</span>
+        </label>
+        <span class="auth-forgot-link">Mot de passe oublié ?</span>
+      </div>
+
+      <button class="auth-submit" (click)="onLogin()" [disabled]="loading" [class.loading]="loading">
+        @if (loading) {
+          <span class="spinner"></span>
+          Connexion en cours...
+        } @else {
+          Se connecter
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+          </svg>
+        }
+      </button>
+
+      <div class="auth-separator">
+        <span>ou</span>
+      </div>
+
+      <div class="auth-alt-action">
+        Pas encore de compte ?
+        <a routerLink="/register" class="auth-alt-link">Créer un compte</a>
+      </div>
+
+      <a routerLink="/" class="auth-back-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
+        </svg>
+        Retour à l'accueil
+      </a>
+    </div>
+  </div>
+</div>

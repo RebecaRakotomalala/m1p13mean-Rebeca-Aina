@@ -1,0 +1,255 @@
+<!-- ======== NAVBAR ======== -->
+<nav class="mc-navbar" [class.scrolled]="isScrolled" [class.menu-open]="menuOpen">
+  <div class="container">
+    <div class="mc-navbar-inner">
+      <!-- Logo -->
+      <a class="mc-brand" routerLink="/">
+        <img src="assets/images/logo4.png" alt="MallConnect" class="mc-logo" />
+      </a>
+
+      <!-- Desktop Navigation -->
+      <ul class="mc-nav-links">
+        <li>
+          <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
+            <span class="nav-icon">🏠</span>
+            Accueil
+          </a>
+        </li>
+        <li>
+          <a routerLink="/catalogue" routerLinkActive="active">
+            <span class="nav-icon">📦</span>
+            Catalogue
+          </a>
+        </li>
+        <li>
+          <a routerLink="/boutiques" routerLinkActive="active">
+            <span class="nav-icon">🏪</span>
+            Boutiques
+          </a>
+        </li>
+      </ul>
+
+      <!-- Right Actions -->
+      <div class="mc-nav-actions">
+        <!-- Not logged in -->
+        <ng-container *ngIf="!isLoggedIn">
+          <a routerLink="/login" class="btn-login">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+              <polyline points="10 17 15 12 10 7"/>
+              <line x1="15" y1="12" x2="3" y2="12"/>
+            </svg>
+            Se connecter
+          </a>
+          <a routerLink="/register" class="btn-register">
+            S'inscrire
+          </a>
+        </ng-container>
+
+        <!-- Logged in -->
+        <ng-container *ngIf="isLoggedIn">
+          <a routerLink="/client/panier" class="btn-cart">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+            </svg>
+            <span class="cart-label">Panier</span>
+          </a>
+
+          <div class="mc-user-dropdown" ngbDropdown>
+            <button class="btn-user" ngbDropdownToggle>
+              <div class="user-avatar-circle">
+                {{ getUserInitial() }}
+              </div>
+              <span class="user-name">{{ currentUser?.nom }}</span>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </button>
+            <div class="dropdown-menu mc-dropdown-menu" ngbDropdownMenu>
+              <div class="dropdown-user-header">
+                <div class="duh-avatar">{{ getUserInitial() }}</div>
+                <div class="duh-info">
+                  <span class="duh-name">{{ currentUser?.nom }} {{ currentUser?.prenom || '' }}</span>
+                  <span class="duh-role">{{ getRoleLabel() }}</span>
+                </div>
+              </div>
+              <div class="dropdown-divider"></div>
+              <a class="dropdown-item mc-dropdown-item" [routerLink]="dashboardLink">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+                  <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+                </svg>
+                Mon espace
+              </a>
+              <a class="dropdown-item mc-dropdown-item" routerLink="/client/commandes">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
+                  <line x1="3" y1="6" x2="21" y2="6"/>
+                  <path d="M16 10a4 4 0 0 1-8 0"/>
+                </svg>
+                Mes commandes
+              </a>
+              <a class="dropdown-item mc-dropdown-item" routerLink="/client/favoris">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                </svg>
+                Mes favoris
+              </a>
+              <div class="dropdown-divider"></div>
+              <a class="dropdown-item mc-dropdown-item item-logout" href="javascript:" (click)="logout()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                  <polyline points="16 17 21 12 16 7"/>
+                  <line x1="21" y1="12" x2="9" y2="12"/>
+                </svg>
+                Déconnexion
+              </a>
+            </div>
+          </div>
+        </ng-container>
+      </div>
+
+      <!-- Mobile hamburger -->
+      <button class="mc-hamburger" [class.is-active]="menuOpen" (click)="menuOpen = !menuOpen" aria-label="Menu">
+        <span class="hamburger-line"></span>
+        <span class="hamburger-line"></span>
+        <span class="hamburger-line"></span>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile menu overlay -->
+<div class="mc-mobile-overlay" [class.visible]="menuOpen" (click)="menuOpen = false"></div>
+
+<!-- Mobile slide menu -->
+<div class="mc-mobile-menu" [class.open]="menuOpen">
+  <div class="mobile-menu-header">
+    <img src="assets/images/logo4.png" alt="MallConnect" style="height: 40px; width: auto;" />
+    <button class="mobile-close" (click)="menuOpen = false">✕</button>
+  </div>
+  <ul class="mobile-nav-links">
+    <li>
+      <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" (click)="menuOpen = false">
+        <span class="nav-icon">🏠</span> Accueil
+      </a>
+    </li>
+    <li>
+      <a routerLink="/catalogue" routerLinkActive="active" (click)="menuOpen = false">
+        <span class="nav-icon">📦</span> Catalogue
+      </a>
+    </li>
+    <li>
+      <a routerLink="/boutiques" routerLinkActive="active" (click)="menuOpen = false">
+        <span class="nav-icon">🏪</span> Boutiques
+      </a>
+    </li>
+  </ul>
+  <div class="mobile-actions" *ngIf="!isLoggedIn">
+    <a routerLink="/login" class="mobile-btn-login" (click)="menuOpen = false">Se connecter</a>
+    <a routerLink="/register" class="mobile-btn-register" (click)="menuOpen = false">S'inscrire</a>
+  </div>
+  <div class="mobile-user-section" *ngIf="isLoggedIn">
+    <div class="mobile-user-info">
+      <div class="mobile-user-avatar">{{ getUserInitial() }}</div>
+      <div>
+        <div class="mobile-user-name">{{ currentUser?.nom }} {{ currentUser?.prenom || '' }}</div>
+        <div class="mobile-user-role">{{ getRoleLabel() }}</div>
+      </div>
+    </div>
+    <ul class="mobile-user-links">
+      <li><a [routerLink]="dashboardLink" (click)="menuOpen = false">Mon espace</a></li>
+      <li><a routerLink="/client/panier" (click)="menuOpen = false">🛒 Panier</a></li>
+      <li><a routerLink="/client/commandes" (click)="menuOpen = false">Mes commandes</a></li>
+      <li><a routerLink="/client/favoris" (click)="menuOpen = false">Mes favoris</a></li>
+      <li><a href="javascript:" class="logout-link" (click)="logout(); menuOpen = false">Déconnexion</a></li>
+    </ul>
+  </div>
+</div>
+
+<!-- ======== CONTENU ======== -->
+<main class="mc-main">
+  <router-outlet></router-outlet>
+</main>
+
+<!-- ======== FOOTER ======== -->
+<footer class="mc-footer">
+  <div class="footer-top">
+    <div class="container">
+      <div class="row">
+        <!-- Brand -->
+        <div class="col-lg-4 col-md-6 mb-4 mb-lg-0">
+          <div class="footer-brand">
+            <img src="assets/images/logo4.png" alt="MallConnect" style="height: 36px; width: auto; margin-bottom: 16px;" />
+            <p class="footer-desc">
+              Votre centre commercial digital à Antananarivo. Découvrez les meilleures boutiques et produits en un seul endroit.
+            </p>
+            <div class="footer-social">
+              <a href="javascript:" class="social-link" title="Facebook">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+              </a>
+              <a href="javascript:" class="social-link" title="Instagram">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+              </a>
+              <a href="javascript:" class="social-link" title="Twitter">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z"/></svg>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Liens rapides -->
+        <div class="col-lg-2 col-md-6 col-6 mb-4 mb-lg-0">
+          <h6 class="footer-title">Navigation</h6>
+          <ul class="footer-links">
+            <li><a routerLink="/">Accueil</a></li>
+            <li><a routerLink="/catalogue">Catalogue</a></li>
+            <li><a routerLink="/boutiques">Boutiques</a></li>
+          </ul>
+        </div>
+
+        <!-- Services -->
+        <div class="col-lg-3 col-md-6 col-6 mb-4 mb-lg-0">
+          <h6 class="footer-title">Services</h6>
+          <ul class="footer-links">
+            <li><a routerLink="/register">Devenir vendeur</a></li>
+            <li><a routerLink="/login">Se connecter</a></li>
+            <li><a routerLink="/register">Créer un compte</a></li>
+          </ul>
+        </div>
+
+        <!-- Contact -->
+        <div class="col-lg-3 col-md-6 mb-4 mb-lg-0">
+          <h6 class="footer-title">Contact</h6>
+          <ul class="footer-contact">
+            <li>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              contact&#64;mallconnect.mg
+            </li>
+            <li>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+              +261 34 00 000 00
+            </li>
+            <li>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              Antananarivo, Madagascar
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <div class="container">
+      <div class="footer-bottom-inner">
+        <p class="footer-copyright">
+          © RAKOTOMALALA NY RANJA REBECA - RAVONIHANITRARIVO AINA TIANA MANAMPISOA
+        </p>
+        <p class="footer-credits">
+          Fait avec <span class="heart">❤</span> à Madagascar
+        </p>
+      </div>
+    </div>
+  </div>
+</footer>

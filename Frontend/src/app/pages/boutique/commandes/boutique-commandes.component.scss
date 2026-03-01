@@ -1,0 +1,32 @@
+// Animations, Stat Cards, Product Tables, and Pagination have been moved to _shared-admin-ui.scss globally.
+
+.table-success-light {
+  background-color: rgba(82, 196, 26, 0.05) !important;
+}
+
+.product-thumb-sm {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  object-fit: cover;
+}
+
+.produit-list {
+  max-height: 80px;
+  overflow-y: auto;
+}
+
+// === RESPONSIVE ===
+@media (max-width: 768px) {
+  .stat-card {
+    margin-bottom: 0.5rem;
+  }
+
+  .stat-value {
+    font-size: 1.25rem;
+  }
+
+  .table-responsive {
+    font-size: 0.875rem;
+  }
+}

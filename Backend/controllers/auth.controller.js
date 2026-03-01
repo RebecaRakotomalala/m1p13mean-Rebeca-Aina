@@ -1,65 +1,36 @@
 /**
  * Contrôleur d'authentification
  * Utilise Express pour gérer les requêtes/réponses
+ * Délègue toute la logique métier au service auth.service.js
  */
 
-const User = require('../models/User');
+const authService = require('../services/auth.service');
 
 // Inscription (Register) avec support des rôles
 exports.register = async (req, res) => {
   try {
     const { email, password, name, role, telephone } = req.body;
 
-    // Validation
-    if (!email || !password || !name) {
-      return res.status(400).json({
-        success: false,
-        message: 'Tous les champs sont requis (email, password, name)'
-      });
-    }
-
-    // Valider le rôle si fourni
-    const validRoles = ['admin', 'boutique', 'client'];
-    const userRole = role && validRoles.includes(role) ? role : 'client';
-
-    // Vérifier si l'utilisateur existe déjà
-    const existingUser = await User.findOne({ email: email.toLowerCase() });
-    if (existingUser) {
-      return res.status(400).json({
-        success: false,
-        message: 'Cet email est déjà utilisé'
-      });
-    }
-
-    // Créer un nouvel utilisateur
-    const user = new User({
-      email: email.toLowerCase(),
-      mot_de_passe_hash: password, // En production, utiliser bcrypt pour hasher
-      nom: name,
-      role: userRole,
-      telephone: telephone || undefined
+    const result = await authService.register({
+      email,
+      password,
+      name,
+      role,
+      telephone
     });
-
-    await user.save();
 
     res.status(201).json({
       success: true,
       message: 'Utilisateur créé avec succès!',
-      user: {
-        id: user._id,
-        email: user.email,
-        nom: user.nom,
-        prenom: user.prenom,
-        role: user.role,
-        telephone: user.telephone,
-        createdAt: user.date_creation
-      }
+      token: result.token,
+      user: result.user
     });
   } catch (error) {
     console.error('Erreur lors de l\'inscription:', error);
-    res.status(500).json({
+    const statusCode = error.message.includes('déjà utilisé') ? 400 : 500;
+    res.status(statusCode).json({
       success: false,
-      message: 'Erreur lors de l\'inscription',
+      message: error.message || 'Erreur lors de l\'inscription',
       error: error.message
     });
   }
@@ -70,76 +41,89 @@ exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Validation
-    if (!email || !password) {
-      return res.status(400).json({
-        success: false,
-        message: 'Email et mot de passe sont requis'
-      });
-    }
+    const result = await authService.login(email, password);
 
-    // Trouver l'utilisateur
-    const user = await User.findOne({ email: email.toLowerCase() });
-    if (!user) {
-      return res.status(401).json({
-        success: false,
-        message: 'Email ou mot de passe incorrect'
-      });
-    }
-
-    // Vérifier le mot de passe (en production, utiliser bcrypt.compare)
-    if (user.mot_de_passe_hash !== password) {
-      return res.status(401).json({
-        success: false,
-        message: 'Email ou mot de passe incorrect'
-      });
-    }
-
-    // Vérifier si l'utilisateur est actif
-    if (!user.actif) {
-      return res.status(403).json({
-        success: false,
-        message: 'Votre compte a été suspendu'
-      });
-    }
-
-    // Connexion réussie
     res.json({
       success: true,
       message: 'Connexion réussie!',
-      user: {
-        id: user._id,
-        email: user.email,
-        nom: user.nom,
-        prenom: user.prenom,
-        role: user.role,
-        telephone: user.telephone,
-        avatar_url: user.avatar_url
-      }
+      token: result.token,
+      user: result.user
     });
   } catch (error) {
     console.error('Erreur lors de la connexion:', error);
-    res.status(500).json({
+    const statusCode = error.message.includes('incorrect') || error.message.includes('suspendu') ? 
+      (error.message.includes('suspendu') ? 403 : 401) : 500;
+    res.status(statusCode).json({
       success: false,
-      message: 'Erreur lors de la connexion',
+      message: error.message || 'Erreur lors de la connexion',
       error: error.message
     });
   }
 };
 
-// Obtenir tous les utilisateurs (pour test)
-exports.getAllUsers = async (req, res) => {
+// Obtenir le profil de l'utilisateur connecté
+exports.getProfile = async (req, res) => {
   try {
-    const users = await User.find().select('-mot_de_passe_hash');
+    const user = await authService.getProfile(req.user._id);
     res.json({
       success: true,
-      count: users.length,
-      users: users
+      user: user
+    });
+  } catch (error) {
+    const statusCode = error.message.includes('non trouvé') ? 404 : 500;
+    res.status(statusCode).json({
+      success: false,
+      message: error.message || 'Erreur lors de la récupération du profil',
+      error: error.message
+    });
+  }
+};
+
+// Mettre à jour le profil de l'utilisateur connecté
+exports.updateProfile = async (req, res) => {
+  try {
+    const { nom, prenom, telephone, avatar_url } = req.body;
+    
+    const user = await authService.updateProfile(req.user._id, {
+      nom,
+      prenom,
+      telephone,
+      avatar_url
+    });
+
+    res.json({
+      success: true,
+      message: 'Profil mis à jour avec succès',
+      user: user
+    });
+  } catch (error) {
+    const statusCode = error.message.includes('non trouvé') ? 404 : 500;
+    res.status(statusCode).json({
+      success: false,
+      message: error.message || 'Erreur lors de la mise à jour du profil',
+      error: error.message
+    });
+  }
+};
+
+// Obtenir tous les utilisateurs (admin)
+exports.getAllUsers = async (req, res) => {
+  try {
+    const { role, search, statut, page = 1, limit = 20 } = req.query;
+    const result = await authService.getAllUsers({ role, search, statut, page, limit });
+    res.json({
+      success: true,
+      count: result.users.length,
+      total: result.total,
+      page: result.page,
+      pages: result.pages,
+      stats: result.stats,
+      users: result.users
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Erreur lors de la récupération des utilisateurs',
+      message: error.message || 'Erreur lors de la récupération des utilisateurs',
       error: error.message
     });
   }
@@ -149,16 +133,7 @@ exports.getAllUsers = async (req, res) => {
 exports.getUsersByRole = async (req, res) => {
   try {
     const { role } = req.params;
-    const validRoles = ['admin', 'boutique', 'client'];
-    
-    if (!validRoles.includes(role)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Rôle invalide. Rôles valides: admin, boutique, client'
-      });
-    }
-
-    const users = await User.find({ role: role, actif: true }).select('-mot_de_passe_hash');
+    const users = await authService.getUsersByRole(role);
     res.json({
       success: true,
       count: users.length,
@@ -166,11 +141,30 @@ exports.getUsersByRole = async (req, res) => {
       users: users
     });
   } catch (error) {
-    res.status(500).json({
+    const statusCode = error.message.includes('invalide') ? 400 : 500;
+    res.status(statusCode).json({
       success: false,
-      message: 'Erreur lors de la récupération des utilisateurs',
+      message: error.message || 'Erreur lors de la récupération des utilisateurs',
       error: error.message
     });
   }
 };
 
+// Activer/Désactiver un utilisateur (admin)
+exports.toggleUserStatus = async (req, res) => {
+  try {
+    const user = await authService.toggleUserStatus(req.params.id);
+    res.json({
+      success: true,
+      message: `Utilisateur ${user.actif ? 'activé' : 'désactivé'} avec succès`,
+      user: user
+    });
+  } catch (error) {
+    const statusCode = error.message.includes('non trouvé') ? 404 : 500;
+    res.status(statusCode).json({
+      success: false,
+      message: error.message || 'Erreur lors du changement de statut',
+      error: error.message
+    });
+  }
+};

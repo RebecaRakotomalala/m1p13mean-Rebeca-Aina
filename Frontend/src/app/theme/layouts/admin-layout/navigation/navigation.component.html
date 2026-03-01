@@ -1,0 +1,14 @@
+<nav>
+  <div class="navbar-wrapper">
+    <div class="m-header">
+      <a href="/" class="b-brand">
+        <img src="assets/images/logo4.png" alt="MallConnect" style="height: 34px; width: auto;" />
+      </a>
+    </div>
+    <app-nav-content
+      (NavCollapsedMob)="navCollapseMob()"
+      (SubmenuCollapse)="navSubmenuCollapse()"
+      class="scroll-div w-100 compact"
+    ></app-nav-content>
+  </div>
+</nav>
