@@ -7,12 +7,10 @@
 @keyframes fadeIn {
     from {
         opacity: 0;
-        transform: translateY(10px);
     }
 
     to {
         opacity: 1;
-        transform: translateY(0);
     }
 }
 
@@ -53,28 +51,32 @@
 }
 
 .animated {
-    animation-duration: 0.6s;
+    animation-duration: 0.3s;
     animation-fill-mode: both;
+    animation-timing-function: ease-out;
 }
 
 .fade-in {
-    animation: fadeIn 0.6s ease-out;
+    animation: fadeIn 0.3s ease-out;
 }
 
 .fade-in-up {
-    animation: slideInUp 0.6s ease-out;
+    animation: slideInUp 0.3s ease-out;
 }
 
 .slide-in-left {
     animation-name: slideInLeft;
+    animation-duration: 0.3s;
 }
 
 .slide-in-right {
     animation-name: slideInRight;
+    animation-duration: 0.3s;
 }
 
 .slide-in-up {
     animation-name: slideInUp;
+    animation-duration: 0.3s;
 }
 
 // === Stat Cards ===
@@ -201,6 +203,25 @@
     font-size: 11px;
     color: #bfbfbf;
     margin-top: 2px;
+}
+
+// === Stat Card Footer Buttons (lighter appearance) ===
+.stat-card-footer {
+    display: flex;
+    gap: 8px;
+    padding: 0.6rem;
+}
+
+.stat-card-footer .btn {
+    padding: 0.325rem 0.6rem;
+    font-size: 0.85rem;
+    line-height: 1;
+    border-radius: 8px;
+    min-width: 0;
+}
+
+.stat-card-footer .btn.btn-sm {
+    padding: 0.25rem 0.5rem;
 }
 
 // === Nav Tabs ===
@@ -495,6 +516,29 @@
 .modal-row {
     display: flex;
     gap: 16px;
+}
+
+// === Emergency override: disable leftover animations that can keep elements hidden ===
+/*
+   Some pages left animation classes or inline delays which occasionally leave
+   elements with opacity:0 or transformed off-screen until a repaint. This
+   forces those classes to be non-blocking so content is immediately visible.
+*/
+.animated,
+.fade-in,
+.fade-in-up,
+.slide-in-left,
+.slide-in-right,
+.slide-in-up {
+    animation: none !important;
+    animation-delay: 0s !important;
+    opacity: 1 !important;
+    transform: none !important;
+}
+
+/* also ensure any inline animation-delay styles don't stall appearance */
+[style*="animation-delay"] {
+    animation-delay: 0s !important;
 }
 
 // Category chips

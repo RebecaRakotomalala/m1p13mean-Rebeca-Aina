@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -9,6 +9,7 @@ import { CardComponent } from '../../../theme/shared/components/card/card.compon
 @Component({
   selector: 'app-admin-dashboard',
   imports: [CommonModule, RouterModule, FormsModule, CardComponent, NgApexchartsModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="admin-dashboard-theme">
     <app-card cardTitle="Pilotage du centre commercial MallConnect" cardClass="dashboard-hero-card" headerClass="dashboard-hero-header">
@@ -381,6 +382,9 @@ export class AdminDashboardComponent implements OnInit {
   categorieChartOptions: Partial<ApexOptions> = {};
   cmdCountChartOptions: Partial<ApexOptions> = {};
 
+  // change detector used when component is OnPush
+  private cdr = inject(ChangeDetectorRef);
+
   constructor(private api: ApiService) {}
 
   private getDefaultStats(): any {
@@ -442,10 +446,12 @@ export class AdminDashboardComponent implements OnInit {
       next: (res) => {
         if (res.success) {
           this.boutiquesFilter = res.boutiques || [];
+          this.cdr.markForCheck();
         }
       },
       error: () => {
         this.boutiquesFilter = [];
+        this.cdr.markForCheck();
       }
     });
   }
@@ -494,6 +500,7 @@ export class AdminDashboardComponent implements OnInit {
   loadDashboardStats(showLoader = true): void {
     const hasCachedData = this.applyCachedDashboard();
     this.loadingStats = showLoader && !hasCachedData;
+    this.cdr.markForCheck();
     const params = this.buildDashboardParams();
 
     // First paint optimization: load lightweight stats first when nothing cached.
@@ -502,6 +509,7 @@ export class AdminDashboardComponent implements OnInit {
         next: (res) => {
           if (res.success) {
             this.applyDashboardStatsOnly(res);
+            this.cdr.markForCheck();
           }
         },
         error: () => {
@@ -514,11 +522,14 @@ export class AdminDashboardComponent implements OnInit {
       next: (res) => {
         if (res.success) {
           this.applyDashboardPayload(res);
+          this.cdr.markForCheck();
         }
         this.loadingStats = false;
+        this.cdr.markForCheck();
       },
       error: (err) => {
         this.loadingStats = false;
+        this.cdr.markForCheck();
         console.error('Erreur dashboard:', err);
       }
     });
@@ -600,6 +611,7 @@ export class AdminDashboardComponent implements OnInit {
         noData: { text: 'Aucune donnee disponible pour cette periode', align: 'center', verticalAlign: 'middle' }
       };
       this.caChartReady = true;
+      this.cdr.markForCheck();
       return;
     }
 
@@ -608,7 +620,7 @@ export class AdminDashboardComponent implements OnInit {
 
     this.caChartOptions = {
       series: [{ name: 'Chiffre d\'Affaires (Ar)', data: dataCA }],
-      chart: { type: 'area', height: 320, toolbar: { show: false }, background: 'transparent' },
+      chart: { type: 'area', height: 320, toolbar: { show: false }, background: 'transparent', animations: { enabled: false } },
       colors: ['#1677ff'],
       stroke: { curve: 'smooth', width: 3 },
       fill: {
@@ -636,6 +648,7 @@ export class AdminDashboardComponent implements OnInit {
       }
     };
     this.caChartReady = true;
+    this.cdr.markForCheck();
   }
 
   // ---- 2) Top 5 Boutiques (horizontal bar) ----
@@ -648,6 +661,7 @@ export class AdminDashboardComponent implements OnInit {
         noData: { text: 'Aucune boutique sur la periode', align: 'center', verticalAlign: 'middle' }
       };
       this.topBoutiqueChartReady = true;
+      this.cdr.markForCheck();
       return;
     }
 
@@ -656,7 +670,7 @@ export class AdminDashboardComponent implements OnInit {
 
     this.topBoutiqueChartOptions = {
       series: [{ name: 'CA (Ar)', data: cas }],
-      chart: { type: 'bar', height: 320, toolbar: { show: false }, background: 'transparent' },
+      chart: { type: 'bar', height: 320, toolbar: { show: false }, background: 'transparent', animations: { enabled: false } },
       plotOptions: { bar: { horizontal: true, borderRadius: 4, barHeight: '50%' } },
       colors: ['#13c2c2'],
       xaxis: {
@@ -677,6 +691,7 @@ export class AdminDashboardComponent implements OnInit {
       }
     };
     this.topBoutiqueChartReady = true;
+    this.cdr.markForCheck();
   }
 
   // ---- 3) Commandes par Statut (donut) ----
@@ -690,6 +705,7 @@ export class AdminDashboardComponent implements OnInit {
         noData: { text: 'Aucune commande pour cette selection', align: 'center', verticalAlign: 'middle' }
       };
       this.cmdStatutChartReady = true;
+      this.cdr.markForCheck();
       return;
     }
 
@@ -704,7 +720,7 @@ export class AdminDashboardComponent implements OnInit {
 
     this.cmdStatutChartOptions = {
       series,
-      chart: { type: 'donut', height: 320, background: 'transparent' },
+        chart: { type: 'donut', height: 320, background: 'transparent', animations: { enabled: false } },
       labels,
       colors,
       legend: { position: 'bottom', fontFamily: 'inherit' },
@@ -723,6 +739,7 @@ export class AdminDashboardComponent implements OnInit {
       responsive: [{ breakpoint: 480, options: { chart: { width: 280 }, legend: { position: 'bottom' } } }]
     };
     this.cmdStatutChartReady = true;
+    this.cdr.markForCheck();
   }
 
   // ---- 4) Boutiques par categorie (pie) ----
@@ -736,6 +753,7 @@ export class AdminDashboardComponent implements OnInit {
         noData: { text: 'Aucune categorie a afficher', align: 'center', verticalAlign: 'middle' }
       };
       this.categorieChartReady = true;
+      this.cdr.markForCheck();
       return;
     }
 
@@ -745,7 +763,7 @@ export class AdminDashboardComponent implements OnInit {
 
     this.categorieChartOptions = {
       series,
-      chart: { type: 'pie', height: 320, background: 'transparent' },
+        chart: { type: 'pie', height: 320, background: 'transparent', animations: { enabled: false } },
       labels,
       colors: palette.slice(0, labels.length),
       legend: { position: 'bottom', fontFamily: 'inherit' },
@@ -753,6 +771,7 @@ export class AdminDashboardComponent implements OnInit {
       responsive: [{ breakpoint: 480, options: { chart: { width: 280 }, legend: { position: 'bottom' } } }]
     };
     this.categorieChartReady = true;
+    this.cdr.markForCheck();
   }
 
   // ---- 5) Nb commandes par mois (bar chart) ----
@@ -765,6 +784,7 @@ export class AdminDashboardComponent implements OnInit {
         noData: { text: 'Aucune evolution disponible', align: 'center', verticalAlign: 'middle' }
       };
       this.cmdCountChartReady = true;
+      this.cdr.markForCheck();
       return;
     }
 
@@ -773,7 +793,7 @@ export class AdminDashboardComponent implements OnInit {
 
     this.cmdCountChartOptions = {
       series: [{ name: 'Commandes', data: dataCounts }],
-      chart: { type: 'bar', height: 320, toolbar: { show: false }, background: 'transparent' },
+        chart: { type: 'bar', height: 320, toolbar: { show: false }, background: 'transparent', animations: { enabled: false } },
       plotOptions: { bar: { columnWidth: '45%', borderRadius: 6 } },
       colors: ['#52c41a'],
       xaxis: {
@@ -787,6 +807,7 @@ export class AdminDashboardComponent implements OnInit {
       tooltip: { theme: 'light' }
     };
     this.cmdCountChartReady = true;
+    this.cdr.markForCheck();
   }
 
   // ---- Helpers ----

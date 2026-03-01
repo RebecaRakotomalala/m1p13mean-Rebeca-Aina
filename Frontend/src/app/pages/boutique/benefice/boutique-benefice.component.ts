@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -55,12 +55,14 @@ interface CategorieBenefice {
   standalone: true,
   imports: [CommonModule, FormsModule, RouterModule, CardComponent, IconDirective, NgApexchartsModule],
   templateUrl: './boutique-benefice.component.html',
-  styleUrls: ['./boutique-benefice.component.scss']
+  styleUrls: ['./boutique-benefice.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class BoutiqueBeneficeComponent implements OnInit {
   private api = inject(ApiService);
   private notificationService = inject(NotificationService);
   private iconService = inject(IconService);
+  private cdr = inject(ChangeDetectorRef);
 
   constructor() {
     this.iconService.addIcon(
@@ -149,10 +151,12 @@ export class BoutiqueBeneficeComponent implements OnInit {
         } else {
           this.notificationService.warning(res.message || 'Aucune donnée disponible');
         }
+        this.cdr.markForCheck();
       },
       error: (err) => {
         this.loading = false;
         this.notificationService.error(err.error?.message || 'Erreur chargement bénéfices');
+        this.cdr.markForCheck();
       }
     });
   }

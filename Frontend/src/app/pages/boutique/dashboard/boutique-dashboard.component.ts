@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, viewChild } from '@angular/core';
+import { Component, OnInit, inject, viewChild, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { IconDirective, IconService } from '@ant-design/icons-angular';
@@ -26,7 +26,8 @@ import { CardComponent } from '../../../theme/shared/components/card/card.compon
   standalone: true,
   imports: [CommonModule, RouterModule, CardComponent, IconDirective, NgApexchartsModule],
   templateUrl: './boutique-dashboard.component.html',
-  styleUrls: ['./boutique-dashboard.component.scss']
+  styleUrls: ['./boutique-dashboard.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class BoutiqueDashboardComponent implements OnInit {
   private api = inject(ApiService);
@@ -62,6 +63,8 @@ export class BoutiqueDashboardComponent implements OnInit {
   loading = true;
   error: string | null = null;
 
+  private cdr = inject(ChangeDetectorRef);
+
   constructor() {
     // Enregistrer les icônes nécessaires
     this.iconService.addIcon(
@@ -88,27 +91,28 @@ export class BoutiqueDashboardComponent implements OnInit {
   loadStats(): void {
     this.loading = true;
     this.error = null;
+    this.cdr.markForCheck();
 
     this.api.getBoutiqueStats().subscribe({
       next: (res) => {
-        this.loading = false;
         if (res.success) {
           this.stats = res.stats;
-          // Réinitialiser les graphiques avec les nouvelles données
-          setTimeout(() => {
-            this.initCharts();
-          }, 100);
+          this.initCharts();
+          this.loading = false;
         } else {
           this.error = res.message || 'Erreur lors du chargement des statistiques';
+          this.loading = false;
           this.notificationService.error(this.error);
         }
+        this.cdr.markForCheck();
       },
       error: (err) => {
-        this.loading = false;
         const errorMessage = err.error?.message || err.message || 'Erreur lors du chargement des statistiques';
         this.error = errorMessage;
+        this.loading = false;
         this.notificationService.error(errorMessage);
         console.error('Erreur chargement stats:', err);
+        this.cdr.markForCheck();
       }
     });
   }
@@ -174,8 +178,7 @@ export class BoutiqueDashboardComponent implements OnInit {
         toolbar: { show: false },
         background: 'transparent',
         animations: {
-          enabled: false,
-          speed: 800
+          enabled: false
         }
       },
       dataLabels: { enabled: false },
@@ -234,8 +237,7 @@ export class BoutiqueDashboardComponent implements OnInit {
         type: 'donut',
         height: 350,
         animations: {
-          enabled: false,
-          speed: 800
+          enabled: false
         }
       },
       labels: defaultCategories.map(c => c.nom),
@@ -291,8 +293,7 @@ export class BoutiqueDashboardComponent implements OnInit {
         toolbar: { show: false },
         background: 'transparent',
         animations: {
-          enabled: false,
-          speed: 800
+          enabled: false
         }
       },
       plotOptions: {

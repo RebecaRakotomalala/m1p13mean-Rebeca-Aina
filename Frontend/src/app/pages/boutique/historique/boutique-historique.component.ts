@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, viewChild } from '@angular/core';
+import { Component, OnInit, inject, viewChild, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IconDirective, IconService } from '@ant-design/icons-angular';
@@ -49,13 +49,15 @@ interface Commande {
   standalone: true,
   imports: [CommonModule, FormsModule, CardComponent, IconDirective, NgApexchartsModule],
   templateUrl: './boutique-historique.component.html',
-  styleUrls: ['./boutique-historique.component.scss']
+  styleUrls: ['./boutique-historique.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class BoutiqueHistoriqueComponent implements OnInit {
   private api = inject(ApiService);
   private authService = inject(AuthService);
   private notificationService = inject(NotificationService);
   private iconService = inject(IconService);
+  private cdr = inject(ChangeDetectorRef);
 
   // Charts
   salesHistoryChart = viewChild<ChartComponent>('salesHistoryChart');
@@ -160,12 +162,14 @@ export class BoutiqueHistoriqueComponent implements OnInit {
           this.error = res.message || 'Erreur lors du chargement de l\'historique';
           this.notificationService.error(this.error);
         }
+        this.cdr.markForCheck();
       },
       error: (err) => {
         this.loading = false;
         const errorMessage = err.error?.message || err.message || 'Erreur lors du chargement de l\'historique';
         this.error = errorMessage;
         this.notificationService.error(errorMessage);
+        this.cdr.markForCheck();
         console.error('Erreur chargement historique:', err);
       }
     });

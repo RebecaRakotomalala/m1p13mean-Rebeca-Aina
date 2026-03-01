@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../../services/api.service';
@@ -7,6 +7,7 @@ import { CardComponent } from '../../../theme/shared/components/card/card.compon
 @Component({
   selector: 'app-admin-evenements',
   imports: [CommonModule, FormsModule, CardComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="row mb-3">
       <div class="col">
@@ -232,6 +233,7 @@ export class AdminEvenementsComponent implements OnInit {
   showModal = false;
   editingId: string | null = null;
   form: any = this.getEmptyForm();
+  private cdr = inject(ChangeDetectorRef);
 
   constructor(private api: ApiService) {}
 
@@ -292,8 +294,13 @@ export class AdminEvenementsComponent implements OnInit {
 
   loadBoutiques(): void {
     this.api.getBoutiquesActives().subscribe({
-      next: (res) => { if (res.success) this.boutiquesActives = res.boutiques; },
-      error: (err) => console.error(err)
+      next: (res) => {
+        if (res.success) {
+          this.boutiquesActives = res.boutiques;
+          this.cdr.markForCheck();
+        }
+      },
+      error: (err) => { console.error(err); this.cdr.markForCheck(); }
     });
   }
 

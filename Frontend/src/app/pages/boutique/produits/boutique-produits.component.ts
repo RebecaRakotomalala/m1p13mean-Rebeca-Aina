@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, ViewChild, ElementRef, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, inject, ViewChild, ElementRef, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IconDirective, IconService } from '@ant-design/icons-angular';
@@ -51,15 +51,16 @@ interface Boutique {
   standalone: true,
   imports: [CommonModule, FormsModule, CardComponent, IconDirective],
   templateUrl: './boutique-produits.component.html',
-  styleUrls: ['./boutique-produits.component.scss']
+  styleUrls: ['./boutique-produits.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class BoutiqueProduitsComponent implements OnInit {
   private api = inject(ApiService);
   private auth = inject(AuthService);
   private notificationService = inject(NotificationService);
   private cloudinaryService = inject(CloudinaryService);
-  private iconService = inject(IconService);
   private cdr = inject(ChangeDetectorRef);
+  private iconService = inject(IconService);
 
   @ViewChild('imageInput') imageInput!: ElementRef<HTMLInputElement>;
 
@@ -147,20 +148,26 @@ export class BoutiqueProduitsComponent implements OnInit {
 
   loadProduits(): void {
     this.loading = true;
+    this.cdr.markForCheck();
+
     this.api.getMyProduits().subscribe({
       next: (res) => {
         if (res.success) {
           this.produits = res.produits || [];
           this.extractCategories();
           this.applyFilters();
+          this.loading = false;
           this.notificationService.success(`${this.produits.length} produit(s) chargé(s)`);
+        } else {
+          this.loading = false;
         }
-        this.loading = false;
+        this.cdr.markForCheck();
       },
       error: (err) => {
         console.error('Erreur chargement produits:', err);
         this.notificationService.error('Erreur lors du chargement des produits');
         this.loading = false;
+        this.cdr.markForCheck();
       }
     });
   }
@@ -375,6 +382,7 @@ export class BoutiqueProduitsComponent implements OnInit {
 
     this.loading = true;
     this.errorMessage = '';
+    this.cdr.markForCheck();
 
     if (this.editingProduit) {
       // Mise à jour
@@ -384,11 +392,13 @@ export class BoutiqueProduitsComponent implements OnInit {
           this.showForm = false;
           this.loadProduits();
           this.notificationService.success('Produit modifié avec succès!');
+          this.cdr.markForCheck();
         },
         error: (err) => {
           this.loading = false;
           this.errorMessage = err.error?.message || 'Erreur lors de la modification';
           this.notificationService.error(this.errorMessage);
+          this.cdr.markForCheck();
         }
       });
     } else {
@@ -398,6 +408,7 @@ export class BoutiqueProduitsComponent implements OnInit {
       } else {
         this.notificationService.error('Aucune boutique trouvée. Veuillez créer une boutique d\'abord.');
         this.loading = false;
+        this.cdr.markForCheck();
         return;
       }
 
@@ -407,11 +418,13 @@ export class BoutiqueProduitsComponent implements OnInit {
           this.showForm = false;
           this.loadProduits();
           this.notificationService.success('Produit créé avec succès!');
+          this.cdr.markForCheck();
         },
         error: (err) => {
           this.loading = false;
           this.errorMessage = err.error?.message || 'Erreur lors de la création';
           this.notificationService.error(this.errorMessage);
+          this.cdr.markForCheck();
         }
       });
     }
@@ -423,6 +436,7 @@ export class BoutiqueProduitsComponent implements OnInit {
         next: () => {
           this.loadProduits();
           this.notificationService.success('Produit supprimé avec succès!');
+          this.cdr.markForCheck();
         },
         error: (error) => {
           this.notificationService.error('Erreur lors de la suppression: ' + (error.error?.message || 'Erreur inconnue'));

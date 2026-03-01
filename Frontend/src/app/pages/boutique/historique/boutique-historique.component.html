@@ -1,15 +1,7 @@
-<!-- Loading -->
-@if (loading) {
-  <div class="text-center py-5">
-    <div class="spinner-border text-primary spinner-border-lg" role="status"></div>
-    <p class="mt-3 text-muted">Chargement de l'historique...</p>
-  </div>
-}
-
 @if (!loading) {
   <!-- 🔝 Stats rapides -->
   <div class="row mb-4">
-    <div class="col-md-6 col-xl-3 mb-3 fade-in animated">
+    <div class="col-md-6 col-xl-3 mb-3">
       <div class="stat-card stat-card-primary">
         <div class="stat-card-body">
           <div class="stat-icon-wrapper stat-icon-primary">
@@ -24,7 +16,7 @@
       </div>
     </div>
 
-    <div class="col-md-6 col-xl-3 mb-3 fade-in animated" style="animation-delay: 100ms">
+    <div class="col-md-6 col-xl-3 mb-3">
       <div class="stat-card stat-card-success">
         <div class="stat-card-body">
           <div class="stat-icon-wrapper stat-icon-success">
@@ -39,7 +31,7 @@
       </div>
     </div>
 
-    <div class="col-md-6 col-xl-3 mb-3 fade-in animated" style="animation-delay: 200ms">
+    <div class="col-md-6 col-xl-3 mb-3">
       <div class="stat-card stat-card-info">
         <div class="stat-card-body">
           <div class="stat-icon-wrapper stat-icon-info">
@@ -54,7 +46,7 @@
       </div>
     </div>
 
-    <div class="col-md-6 col-xl-3 mb-3 fade-in animated" style="animation-delay: 300ms">
+    <div class="col-md-6 col-xl-3 mb-3">
       <div class="stat-card stat-card-warning">
         <div class="stat-card-body">
           <div class="stat-icon-wrapper stat-icon-warning">
@@ -71,7 +63,7 @@
   </div>
 
   <!-- Filtres -->
-  <div class="slide-in-up animated">
+  <div>
     <app-card>
       <div class="row g-3 align-items-end">
         <div class="col-md-3">
@@ -233,7 +225,7 @@
   <!-- Vue Graphiques -->
   @if (viewMode === 'chart') {
     <div class="row g-4 mt-3">
-      <div class="col-12 slide-in-left animated">
+      <div class="col-12">
         <app-card cardTitle="📈 Évolution des Ventes">
           @if (salesHistoryChartOptions) {
             <apx-chart
@@ -253,7 +245,7 @@
         </app-card>
       </div>
 
-      <div class="col-12 slide-in-right animated">
+      <div class="col-12">
         <app-card cardTitle="📊 Nombre de Commandes par Jour">
           @if (ordersHistoryChartOptions) {
             <apx-chart
