@@ -270,6 +270,10 @@
     .card-cta {
       opacity: 1;
     }
+    /* show favorite when hovering a boutique card */
+    .btn-fav {
+      opacity: 1 !important;
+    }
   }
 }
 
@@ -454,6 +458,12 @@
   transition: all 0.3s ease;
   animation: fadeInUp 0.4s ease both;
   text-decoration: none;
+  position: relative;
+
+  /* always show fav button inside list item */
+  .btn-fav {
+    opacity: 1 !important;
+  }
 
   &:hover {
     transform: translateX(4px);

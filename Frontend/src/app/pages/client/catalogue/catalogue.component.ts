@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -34,15 +34,17 @@ import { CardComponent } from '../../../theme/shared/components/card/card.compon
       </div>
 
       <!-- Grille de produits -->
-      <div class="row">
-        <div class="col-md-4 col-lg-3 mb-4" *ngFor="let p of produits">
-          <div class="card h-100 product-card" style="cursor:pointer;" [routerLink]="['/client/produit', p._id]">
-            <img [src]="p.image_principale || 'assets/images/authentication/img-placeholder.svg'" class="card-img-top" style="height:200px;object-fit:cover;" alt="{{ p.nom }}" />
-            <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-4 col-lg-3 mb-3" *ngFor="let p of produits">
+          <div class="card h-100 product-card" style="cursor:pointer;overflow:hidden;" [routerLink]="['/client/produit', p._id]">
+            <div class="product-image-wrapper">
+              <img [src]="p.image_principale || 'assets/images/authentication/img-placeholder.svg'" class="product-image" alt="{{ p.nom }}" />
+            </div>
+            <div class="card-body d-flex flex-column">
               <p class="text-muted small mb-1">{{ p.boutique_id?.nom }}</p>
-              <h6 class="card-title mb-1">{{ p.nom }}</h6>
-              <p class="text-muted small mb-2" *ngIf="p.description_courte">{{ p.description_courte | slice:0:60 }}...</p>
-              <div class="d-flex align-items-center justify-content-between">
+              <h6 class="card-title mb-1 flex-grow-0">{{ p.nom }}</h6>
+              <p class="text-muted small mb-2 flex-grow-0" *ngIf="p.description_courte">{{ p.description_courte | slice:0:60 }}...</p>
+              <div class="d-flex align-items-center justify-content-between mt-auto">
                 <div>
                   <span *ngIf="p.prix_promo" class="text-decoration-line-through text-muted small me-1">{{ p.prix_initial | number:'1.0-0' }} Ar</span>
                   <strong class="text-primary">{{ (p.prix_promo || p.prix_initial) | number:'1.0-0' }} Ar</strong>
@@ -71,8 +73,38 @@ import { CardComponent } from '../../../theme/shared/components/card/card.compon
     </app-card>
   `,
   styles: [`
-    .product-card:hover { box-shadow: 0 4px 15px rgba(0,0,0,0.1); transform: translateY(-2px); transition: all 0.2s; }
-  `]
+    .product-image-wrapper {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      overflow: hidden;
+      background: #f5f5f5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .product-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+      transition: transform 0.3s ease;
+    }
+    .product-card {
+      border-radius: 8px;
+      border: 1px solid #e8e8e8;
+      transition: all 0.3s ease;
+      display: flex;
+      flex-direction: column;
+    }
+    .product-card:hover {
+      box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+      transform: translateY(-4px);
+    }
+    .product-card:hover .product-image {
+      transform: scale(1.05);
+    }
+  `],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class CatalogueComponent implements OnInit {
   produits: any[] = [];
@@ -82,6 +114,7 @@ export class CatalogueComponent implements OnInit {
   maxPrix: number | null = null;
   currentPage = 1;
   totalPages = 1;
+  private cdr = inject(ChangeDetectorRef);
 
   constructor(private api: ApiService) {}
 
@@ -99,9 +132,13 @@ export class CatalogueComponent implements OnInit {
         if (res.success) {
           this.produits = res.produits;
           this.totalPages = res.pages || 1;
+          this.cdr.markForCheck();
         }
       },
-      error: (err) => console.error(err)
+      error: (err) => {
+        console.error(err);
+        this.cdr.markForCheck();
+      }
     });
   }
 

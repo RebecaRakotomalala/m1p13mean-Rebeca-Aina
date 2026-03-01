@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../../services/auth.service';
@@ -7,6 +7,7 @@ import { CardComponent } from '../../../theme/shared/components/card/card.compon
 @Component({
   selector: 'app-admin-users',
   imports: [CommonModule, FormsModule, CardComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <!-- Stats rapides -->
     <div class="row mb-3">
@@ -242,6 +243,7 @@ export class AdminUsersComponent implements OnInit {
   private searchTimer: any = null;
   selectedUser: any = null;
   userStats = { total: 0, admins: 0, boutiques: 0, clients: 0 };
+  private cdr = inject(ChangeDetectorRef);
 
   constructor(private authService: AuthService) {}
 
@@ -272,10 +274,12 @@ export class AdminUsersComponent implements OnInit {
             };
           }
         }
-        this.loading = false;
+          this.loading = false;
+          this.cdr.markForCheck();
       },
       error: (err: any) => {
         this.loading = false;
+          this.cdr.markForCheck();
         console.error(err);
       }
     });

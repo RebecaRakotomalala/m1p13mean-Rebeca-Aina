@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../../services/api.service';
@@ -7,6 +7,7 @@ import { CardComponent } from '../../../theme/shared/components/card/card.compon
 @Component({
   selector: 'app-admin-commandes',
   imports: [CommonModule, FormsModule, CardComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <app-card cardTitle="Gestion des Commandes">
       <!-- Filtres -->
@@ -307,6 +308,7 @@ export class AdminCommandesComponent implements OnInit {
   total = 0;
   selectedCommande: any = null;
   private searchTimer: any = null;
+  private cdr = inject(ChangeDetectorRef);
 
   constructor(private api: ApiService) {}
 
@@ -330,9 +332,11 @@ export class AdminCommandesComponent implements OnInit {
           this.page = res.page;
         }
         this.loading = false;
+        this.cdr.markForCheck();
       },
       error: (err) => {
         this.loading = false;
+        this.cdr.markForCheck();
         console.error(err);
       }
     });

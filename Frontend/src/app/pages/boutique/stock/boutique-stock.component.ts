@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -80,12 +80,14 @@ interface CsvRow {
   standalone: true,
   imports: [CommonModule, FormsModule, RouterModule, CardComponent, IconDirective, NgApexchartsModule],
   templateUrl: './boutique-stock.component.html',
-  styleUrls: ['./boutique-stock.component.scss']
+  styleUrls: ['./boutique-stock.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class BoutiqueStockComponent implements OnInit {
   private api = inject(ApiService);
   private notificationService = inject(NotificationService);
   private iconService = inject(IconService);
+  private cdr = inject(ChangeDetectorRef);
 
   constructor() {
     this.iconService.addIcon(
@@ -213,10 +215,12 @@ export class BoutiqueStockComponent implements OnInit {
         } else {
           this.notificationService.error(res.message || 'Erreur chargement stock');
         }
+        this.cdr.markForCheck();
       },
       error: (err) => {
         this.loading = false;
         this.notificationService.error(err.error?.message || 'Erreur chargement stock');
+        this.cdr.markForCheck();
       }
     });
   }

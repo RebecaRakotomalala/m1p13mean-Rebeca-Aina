@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../../services/api.service';
@@ -7,6 +7,7 @@ import { CardComponent } from '../../../theme/shared/components/card/card.compon
 @Component({
   selector: 'app-admin-avis',
   imports: [CommonModule, FormsModule, CardComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <app-card cardTitle="Moderation des Avis">
       <!-- Filtres -->
@@ -139,6 +140,9 @@ export class AdminAvisComponent implements OnInit {
   rejectingAvis: any = null;
   raisonRejet = '';
 
+  // manual detector for OnPush
+  private cdr = inject(ChangeDetectorRef);
+
   constructor(private api: ApiService) {}
 
   ngOnInit(): void { this.loadAvis(); }
@@ -157,9 +161,11 @@ export class AdminAvisComponent implements OnInit {
           this.page = res.page;
         }
         this.loading = false;
+        this.cdr.markForCheck();
       },
       error: (err) => {
         this.loading = false;
+        this.cdr.markForCheck();
         console.error(err);
       }
     });

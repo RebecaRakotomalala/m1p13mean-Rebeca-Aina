@@ -1,5 +1,10 @@
 // Animations, Stat Cards, Product Tables, and Pagination have been moved to _shared-admin-ui.scss globally.
 
+.spinner-border-lg {
+  will-change: transform;
+  contain: layout style paint;
+}
+
 .stat-card-footer {
   padding-top: 1rem;
   border-top: 1px solid #f0f0f0;
