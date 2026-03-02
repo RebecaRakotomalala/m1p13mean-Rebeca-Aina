@@ -142,13 +142,6 @@
           <strong>{{ panier.total | number:'1.0-0' }} Ar</strong>
         </div>
 
-        <div class="summary-row">
-          <span>Livraison</span>
-          <strong [class.text-success]="fraisLivraison === 0">
-            {{ fraisLivraison === 0 ? 'Gratuit' : (fraisLivraison | number:'1.0-0') + ' Ar' }}
-          </strong>
-        </div>
-
         <div class="summary-divider"></div>
 
         <div class="summary-row summary-total">

@@ -71,6 +71,7 @@ interface CsvRow {
   nom: string;
   categorie: string;
   prix_achat: number;
+  prix_vente: number;
   quantite: number;
   reference_sku?: string;
 }
@@ -172,6 +173,7 @@ export class BoutiqueStockComponent implements OnInit {
     nom: '',
     categorie: '',
     prix_achat: null as number | null,
+    prix_vente: null as number | null,
     quantite: null as number | null,
     reference_sku: ''
   };
@@ -455,14 +457,15 @@ export class BoutiqueStockComponent implements OnInit {
     // Colonnes requises
     const nomIndex = headers.findIndex(h => ['nom', 'produit', 'name'].includes(h));
     const catIndex = headers.findIndex(h => ['categorie', 'catégorie', 'category', 'cat'].includes(h));
-    const prixIndex = headers.findIndex(h => ['prix_achat', 'prix achat', 'cout', 'cost', 'prix'].includes(h));
+    const prixAchatIndex = headers.findIndex(h => ['prix_achat', 'prix achat', 'cout', 'cost'].includes(h));
+    const prixVenteIndex = headers.findIndex(h => ['prix_vente', 'prix vente', 'prix_de_vente', 'vente', 'selling_price'].includes(h));
     const qteIndex = headers.findIndex(h => ['quantite', 'quantité', 'qty', 'quantity', 'stock', 'qte'].includes(h));
     const skuIndex = headers.findIndex(h => ['reference_sku', 'sku', 'ref', 'reference'].includes(h));
 
     const missing: string[] = [];
     if (nomIndex === -1) missing.push('nom (ou produit)');
     if (catIndex === -1) missing.push('categorie');
-    if (prixIndex === -1) missing.push('prix_achat (ou cout)');
+    if (prixAchatIndex === -1) missing.push('prix_achat (ou cout)');
     if (qteIndex === -1) missing.push('quantite (ou qty)');
 
     if (missing.length > 0) {
@@ -477,18 +480,21 @@ export class BoutiqueStockComponent implements OnInit {
       const cols = lines[i].split(separator).map(c => c.trim().replace(/"/g, ''));
       const nom = cols[nomIndex]?.trim() || '';
       const categorie = cols[catIndex]?.trim() || '';
-      const prixAchat = parseFloat(cols[prixIndex]);
+      const prixAchat = parseFloat(cols[prixAchatIndex]);
+      const prixVente = prixVenteIndex !== -1 ? parseFloat(cols[prixVenteIndex]) : prixAchat;
       const quantite = parseInt(cols[qteIndex], 10);
 
       if (!nom) { erreurs.push(`Ligne ${i + 1}: nom vide`); continue; }
       if (!categorie) { erreurs.push(`Ligne ${i + 1}: catégorie vide`); continue; }
-      if (isNaN(prixAchat) || prixAchat < 0) { erreurs.push(`Ligne ${i + 1}: prix invalide "${cols[prixIndex]}"`); continue; }
+      if (isNaN(prixAchat) || prixAchat < 0) { erreurs.push(`Ligne ${i + 1}: prix d'achat invalide "${cols[prixAchatIndex]}"`); continue; }
+      if (isNaN(prixVente) || prixVente < 0) { erreurs.push(`Ligne ${i + 1}: prix de vente invalide "${cols[prixVenteIndex]}"`); continue; }
       if (isNaN(quantite) || quantite < 0) { erreurs.push(`Ligne ${i + 1}: quantité invalide "${cols[qteIndex]}"`); continue; }
 
       this.csvData.push({
         nom,
         categorie,
         prix_achat: prixAchat,
+        prix_vente: prixVente,
         quantite,
         reference_sku: skuIndex !== -1 ? cols[skuIndex]?.trim() : undefined
       });
@@ -496,6 +502,9 @@ export class BoutiqueStockComponent implements OnInit {
 
     if (erreurs.length > 0) {
       this.notificationService.warning(`${erreurs.length} ligne(s) ignorée(s) pour erreurs`);
+    }
+    if (prixVenteIndex === -1 && this.csvData.length > 0) {
+      this.notificationService.warning('Colonne prix_vente absente: prix de vente = prix d\'achat appliqué par défaut');
     }
     if (this.csvData.length > 0) {
       this.notificationService.success(`${this.csvData.length} produit(s) détecté(s) dans le CSV`);
@@ -552,7 +561,7 @@ export class BoutiqueStockComponent implements OnInit {
 
   // === Modal saisie manuelle ===
   openManualModal(): void {
-    this.manualForm = { nom: '', categorie: '', prix_achat: null, quantite: null, reference_sku: '' };
+    this.manualForm = { nom: '', categorie: '', prix_achat: null, prix_vente: null, quantite: null, reference_sku: '' };
     this.manualErrors = {};
     this.showManualModal = true;
   }
@@ -596,6 +605,21 @@ export class BoutiqueStockComponent implements OnInit {
       this.manualErrors['prix_achat'] = 'Valeur invalide';
     }
 
+    // Prix de vente
+    if (this.manualForm.prix_vente === null || this.manualForm.prix_vente === undefined) {
+      this.manualErrors['prix_vente'] = 'Le prix de vente est requis';
+    } else if (typeof this.manualForm.prix_vente === 'string') {
+      this.manualErrors['prix_vente'] = 'Le prix doit être un nombre valide';
+    } else if (isNaN(this.manualForm.prix_vente)) {
+      this.manualErrors['prix_vente'] = 'Format invalide : entrez un nombre (ex: 22000)';
+    } else if (this.manualForm.prix_vente < 0) {
+      this.manualErrors['prix_vente'] = 'Le prix ne peut pas être négatif';
+    } else if (this.manualForm.prix_vente === 0) {
+      this.manualErrors['prix_vente'] = 'Le prix de vente doit être supérieur à 0';
+    } else if (!Number.isFinite(this.manualForm.prix_vente)) {
+      this.manualErrors['prix_vente'] = 'Valeur invalide';
+    }
+
     // Quantité
     if (this.manualForm.quantite === null || this.manualForm.quantite === undefined) {
       this.manualErrors['quantite'] = 'La quantité est requise';
@@ -619,13 +643,14 @@ export class BoutiqueStockComponent implements OnInit {
       nom: this.manualForm.nom.trim(),
       categorie: this.manualForm.categorie.trim(),
       prix_achat: this.manualForm.prix_achat!,
+      prix_vente: this.manualForm.prix_vente!,
       quantite: this.manualForm.quantite!,
       reference_sku: this.manualForm.reference_sku?.trim() || undefined
     });
 
     this.notificationService.success(`"${this.manualForm.nom}" ajouté à la liste d'import`);
     // Reset form for next entry
-    this.manualForm = { nom: '', categorie: this.manualForm.categorie, prix_achat: null, quantite: null, reference_sku: '' };
+    this.manualForm = { nom: '', categorie: this.manualForm.categorie, prix_achat: null, prix_vente: null, quantite: null, reference_sku: '' };
     this.manualErrors = {};
   }
 
@@ -636,11 +661,11 @@ export class BoutiqueStockComponent implements OnInit {
   }
 
   downloadCsvTemplate(): void {
-    const headers = 'nom;categorie;prix_achat;quantite;reference_sku\n';
+    const headers = 'nom;categorie;prix_achat;prix_vente;quantite;reference_sku\n';
     const samples = [
-      '"Fond de teint mat";"Maquillage";"18000";"50";"FDT-001"',
-      '"Crème hydratante";"Soins visage";"12000";"30";"CRH-002"',
-      '"Mascara waterproof";"Maquillage";"9500";"80";"MSC-003"'
+      '"Fond de teint mat";"Maquillage";"18000";"23000";"50";"FDT-001"',
+      '"Crème hydratante";"Soins visage";"12000";"16500";"30";"CRH-002"',
+      '"Mascara waterproof";"Maquillage";"9500";"14000";"80";"MSC-003"'
     ].join('\n');
     const content = headers + samples;
     const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });

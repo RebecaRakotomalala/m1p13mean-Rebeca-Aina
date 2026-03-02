@@ -4,6 +4,8 @@ import { RouterModule, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
+import { AuthService } from '../../../services/auth.service';
+import { ApiService } from '../../../services/api.service';
 
 @Component({
   selector: 'app-boutique-detail',
@@ -15,6 +17,8 @@ import { environment } from '../../../../environments/environment';
 })
 export class BoutiqueDetailComponent implements OnInit {
   private http = inject(HttpClient);
+  private api = inject(ApiService);
+  private auth = inject(AuthService);
   private cdr = inject(ChangeDetectorRef);
   private route = inject(ActivatedRoute);
   private apiUrl = environment.apiUrl;
@@ -29,6 +33,17 @@ export class BoutiqueDetailComponent implements OnInit {
   categories: string[] = [];
   sortBy: 'nom' | 'prix_asc' | 'prix_desc' | 'populaire' = 'nom';
   viewMode: 'grid' | 'list' = 'grid';
+  avis: any[] = [];
+  newAvis = { note: 5, commentaire: '' };
+  submittingAvis = false;
+
+  get isLoggedIn(): boolean {
+    return this.auth.isLoggedIn;
+  }
+
+  get isClientLoggedIn(): boolean {
+    return this.auth.currentUser?.role === 'client';
+  }
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
@@ -56,6 +71,18 @@ export class BoutiqueDetailComponent implements OnInit {
         },
         error: () => {
           this.produitsLoading = false;
+          this.cdr.detectChanges();
+        }
+      });
+      this.api.getAvisByBoutique(id).subscribe({
+        next: (res) => {
+          if (res.success) {
+            this.avis = res.avis || [];
+          }
+          this.cdr.detectChanges();
+        },
+        error: () => {
+          this.avis = [];
           this.cdr.detectChanges();
         }
       });
@@ -152,5 +179,47 @@ export class BoutiqueDetailComponent implements OnInit {
     this.selectedCategorie = '';
     this.sortBy = 'nom';
     this.applyFilters();
+  }
+
+  submitAvisBoutique(): void {
+    if (!this.boutique?._id) return;
+    if (!this.isClientLoggedIn) {
+      alert(this.isLoggedIn ? 'Seuls les comptes client peuvent laisser un avis.' : 'Connectez-vous en tant que client pour laisser un avis.');
+      return;
+    }
+    if (!this.newAvis.commentaire.trim()) return;
+
+    this.submittingAvis = true;
+    this.api.createAvis({
+      type: 'boutique',
+      boutique_id: this.boutique._id,
+      note: this.newAvis.note,
+      commentaire: this.newAvis.commentaire.trim()
+    }).subscribe({
+      next: () => {
+        this.newAvis = { note: 5, commentaire: '' };
+        this.api.getAvisByBoutique(this.boutique._id).subscribe({
+          next: (res) => {
+            this.avis = res.success ? (res.avis || []) : [];
+            this.submittingAvis = false;
+            this.boutique.nombre_avis = this.avis.length;
+            if (this.avis.length > 0) {
+              const avg = this.avis.reduce((sum, a) => sum + (a.note || 0), 0) / this.avis.length;
+              this.boutique.note_moyenne = Number.isFinite(avg) ? avg : 0;
+            }
+            this.cdr.detectChanges();
+          },
+          error: () => {
+            this.submittingAvis = false;
+            this.cdr.detectChanges();
+          }
+        });
+      },
+      error: (err) => {
+        this.submittingAvis = false;
+        alert(err.error?.message || 'Erreur lors de l\'envoi de l\'avis');
+        this.cdr.detectChanges();
+      }
+    });
   }
 }

@@ -124,6 +124,74 @@
     </div>
   </section>
 
+  <!-- Avis boutique -->
+  <section class="container py-4">
+    <div class="card border-0 shadow-sm">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h4 class="mb-0">⭐ Avis sur la boutique</h4>
+          <span class="badge bg-light text-dark">{{ avis.length }} avis</span>
+        </div>
+
+        <div class="border rounded p-3 mb-3" *ngIf="isClientLoggedIn">
+          <h6 class="mb-2">Laisser un avis</h6>
+          <div class="d-flex gap-2 mb-2">
+            <button
+              *ngFor="let n of [1,2,3,4,5]"
+              type="button"
+              class="btn btn-sm"
+              [ngClass]="n <= newAvis.note ? 'btn-warning' : 'btn-outline-warning'"
+              (click)="newAvis.note = n"
+            >
+              ★
+            </button>
+          </div>
+          <textarea
+            class="form-control mb-2"
+            rows="3"
+            placeholder="Partagez votre expérience avec cette boutique..."
+            [(ngModel)]="newAvis.commentaire"
+          ></textarea>
+          <button
+            type="button"
+            class="btn btn-primary btn-sm"
+            (click)="submitAvisBoutique()"
+            [disabled]="submittingAvis || !newAvis.commentaire.trim()"
+          >
+            {{ submittingAvis ? 'Envoi...' : 'Publier mon avis' }}
+          </button>
+        </div>
+
+        <div class="alert alert-info py-2" *ngIf="!isLoggedIn">
+          <a routerLink="/login">Connectez-vous</a> en tant que client pour laisser un avis.
+        </div>
+
+        <div class="alert alert-warning py-2" *ngIf="isLoggedIn && !isClientLoggedIn">
+          Seuls les comptes client peuvent laisser un avis.
+        </div>
+
+        <div *ngFor="let a of avis" class="border-bottom py-2">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <strong>{{ a.client_id?.nom || 'Client' }}</strong>
+              <span class="text-warning ms-2">{{ '★'.repeat(a.note || 0) }}</span>
+            </div>
+            <small class="text-muted">{{ a.date_creation | date:'dd/MM/yyyy' }}</small>
+          </div>
+          <p class="mb-1">{{ a.commentaire }}</p>
+          <div *ngIf="a.reponse_boutique" class="ms-3 p-2 bg-light rounded">
+            <small class="text-primary fw-semibold">Réponse boutique :</small>
+            <p class="mb-0 small">{{ a.reponse_boutique }}</p>
+          </div>
+        </div>
+
+        <div class="text-center text-muted py-3" *ngIf="avis.length === 0">
+          Aucun avis pour le moment.
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- Products Section -->
   <section class="products-section">
     <div class="container">

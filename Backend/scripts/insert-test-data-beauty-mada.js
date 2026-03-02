@@ -1,7 +1,10 @@
 /**
  * Script pour insérer des produits et commandes de test pour "Beauty Mada"
  * 
- * Usage: node scripts/insert-test-data-beauty-mada.js
+ * Usage:
+ *   node scripts/insert-test-data-beauty-mada.js
+ *   node scripts/insert-test-data-beauty-mada.js --with-orders
+ *   node scripts/insert-test-data-beauty-mada.js --clean
  */
 
 require('dotenv').config();
@@ -233,56 +236,106 @@ async function insertTestData() {
       console.log('✅ Anciennes données supprimées');
     }
 
-    // Insérer les produits
-    console.log('\n📦 Insertion des produits...');
+    // Insérer / mettre à jour les produits
+    console.log('\n📦 Synchronisation des produits...');
     const produitsInsérés = [];
+    let produitsCreated = 0;
+    let produitsUpdated = 0;
     for (const produitData of produitsData) {
-      const slug = generateSlug(produitData.nom);
-      const referenceSku = `BM-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-      
-      // Vérifier si le slug existe déjà
-      let finalSlug = slug;
-      let counter = 1;
-      while (await Produit.findOne({ slug: finalSlug, boutique_id: BOUTIQUE_ID })) {
-        finalSlug = `${slug}-${counter}`;
-        counter++;
-      }
+      const baseSlug = generateSlug(produitData.nom);
+      const stableSku = produitData.reference_sku || `BM-${baseSlug.slice(0, 8).toUpperCase()}-${String(produitsInsérés.length + 1).padStart(3, '0')}`;
+      const prixAchat = produitData.prix_achat || Math.round(produitData.prix_initial * 0.62);
 
-      const produit = new Produit({
+      const byNomRegex = new RegExp(`^${produitData.nom.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i');
+      let produit = await Produit.findOne({
         boutique_id: BOUTIQUE_ID,
-        nom: produitData.nom,
-        slug: finalSlug,
-        reference_sku: referenceSku,
-        description_courte: produitData.description_courte,
-        description_longue: produitData.description_longue,
-        categorie: produitData.categorie,
-        sous_categorie: produitData.sous_categorie,
-        tags: produitData.tags,
-        prix_initial: produitData.prix_initial,
-        prix_promo: produitData.prix_promo,
-        pourcentage_reduction: produitData.pourcentage_reduction,
-        stock_quantite: produitData.stock_quantite,
-        stock_seuil_alerte: produitData.stock_seuil_alerte,
-        image_principale: produitData.image_principale,
-        images_secondaires: produitData.images_secondaires,
-        poids_kg: produitData.poids_kg,
-        actif: produitData.actif,
-        nouveau: produitData.nouveau,
-        coup_de_coeur: produitData.coup_de_coeur,
-        note_moyenne: (Math.random() * 1.5 + 3.5).toFixed(1), // Note entre 3.5 et 5.0
-        nombre_avis: Math.floor(Math.random() * 30) + 5,
-        nombre_vues: Math.floor(Math.random() * 200) + 50,
-        nombre_ventes: Math.floor(Math.random() * 20),
-        nombre_favoris: Math.floor(Math.random() * 10)
+        $or: [{ reference_sku: stableSku }, { nom: byNomRegex }]
       });
 
-      await produit.save();
-      produitsInsérés.push(produit);
-      console.log(`   ✅ ${produit.nom} (${produit.slug})`);
-    }
-    console.log(`✅ ${produitsInsérés.length} produits insérés\n`);
+      if (produit) {
+        produit.nom = produitData.nom;
+        produit.reference_sku = stableSku;
+        produit.description_courte = produitData.description_courte;
+        produit.description_longue = produitData.description_longue;
+        produit.categorie = produitData.categorie;
+        produit.sous_categorie = produitData.sous_categorie;
+        produit.tags = produitData.tags;
+        produit.prix_initial = produitData.prix_initial;
+        produit.prix_achat = prixAchat;
+        produit.prix_promo = produitData.prix_promo;
+        produit.pourcentage_reduction = produitData.pourcentage_reduction;
+        produit.stock_quantite = produitData.stock_quantite;
+        produit.stock_seuil_alerte = produitData.stock_seuil_alerte;
+        produit.image_principale = produitData.image_principale;
+        produit.images_secondaires = produitData.images_secondaires;
+        produit.poids_kg = produitData.poids_kg;
+        produit.actif = produitData.actif;
+        produit.nouveau = produitData.nouveau;
+        produit.coup_de_coeur = produitData.coup_de_coeur;
+        produit.date_modification = new Date();
+        await produit.save();
+        produitsUpdated++;
+        console.log(`   ♻️  ${produit.nom} mis à jour`);
+      } else {
+        let finalSlug = baseSlug;
+        let counter = 1;
+        while (await Produit.findOne({ slug: finalSlug, boutique_id: BOUTIQUE_ID })) {
+          finalSlug = `${baseSlug}-${counter}`;
+          counter++;
+        }
 
-    // Créer des commandes de test
+        produit = new Produit({
+          boutique_id: BOUTIQUE_ID,
+          nom: produitData.nom,
+          slug: finalSlug,
+          reference_sku: stableSku,
+          description_courte: produitData.description_courte,
+          description_longue: produitData.description_longue,
+          categorie: produitData.categorie,
+          sous_categorie: produitData.sous_categorie,
+          tags: produitData.tags,
+          prix_initial: produitData.prix_initial,
+          prix_achat: prixAchat,
+          prix_promo: produitData.prix_promo,
+          pourcentage_reduction: produitData.pourcentage_reduction,
+          stock_quantite: produitData.stock_quantite,
+          stock_seuil_alerte: produitData.stock_seuil_alerte,
+          image_principale: produitData.image_principale,
+          images_secondaires: produitData.images_secondaires,
+          poids_kg: produitData.poids_kg,
+          actif: produitData.actif,
+          nouveau: produitData.nouveau,
+          coup_de_coeur: produitData.coup_de_coeur,
+          note_moyenne: (Math.random() * 1.5 + 3.5).toFixed(1), // Note entre 3.5 et 5.0
+          nombre_avis: Math.floor(Math.random() * 30) + 5,
+          nombre_vues: Math.floor(Math.random() * 200) + 50,
+          nombre_ventes: Math.floor(Math.random() * 20),
+          nombre_favoris: Math.floor(Math.random() * 10)
+        });
+
+        await produit.save();
+        produitsCreated++;
+        console.log(`   ✅ ${produit.nom} créé`);
+      }
+
+      produitsInsérés.push(produit);
+    }
+    console.log(`✅ Produits synchronisés: ${produitsCreated} créé(s), ${produitsUpdated} mis à jour\n`);
+
+    // Créer des commandes de test (optionnel)
+    const withOrders = process.argv.includes('--with-orders');
+    const commandesExistantes = await Commande.countDocuments({ client_id: client._id });
+    if (!withOrders && commandesExistantes > 0) {
+      console.log('ℹ️ Commandes existantes détectées, création ignorée (utilisez --with-orders pour en générer de nouvelles)');
+      console.log('\n📊 Résumé:');
+      console.log(`   - Produits: ${produitsInsérés.length} synchronisés`);
+      console.log(`   - Commandes: inchangées (${commandesExistantes} existantes)`);
+      console.log('\n✅ Données de test mises à jour avec succès!');
+      await mongoose.connection.close();
+      console.log('✅ Déconnexion de MongoDB');
+      return;
+    }
+
     console.log('🛒 Création des commandes de test...');
     const statuts = ['en_attente', 'confirmee', 'en_preparation', 'prete', 'en_livraison', 'livree'];
     const methodesPaiement = ['carte_credit', 'paypal', 'wallet', 'especes'];
