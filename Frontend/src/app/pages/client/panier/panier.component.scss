@@ -641,3 +641,19 @@
   }
 }
 
+/* Performance mode: disable expensive animations/transitions on this page */
+.cart-container,
+.success-card,
+.success-icon,
+.cart-item,
+.address-section,
+.btn-order,
+.btn-primary-custom,
+.btn-outline-custom,
+.btn-remove,
+.qty-controls .qty-btn,
+.delivery-option .option-content {
+  animation: none !important;
+  transition: none !important;
+}
+
