@@ -487,6 +487,7 @@
                 <li><strong>nom</strong> — Nom du produit</li>
                 <li><strong>categorie</strong> — Catégorie du produit</li>
                 <li><strong>prix_achat</strong> — Coût fournisseur (en Ariary)</li>
+                <li><strong>prix_vente</strong> — Prix de vente (en Ariary)</li>
                 <li><strong>quantite</strong> — Quantité à stocker</li>
                 <li class="text-muted"><strong>reference_sku</strong> — Référence interne <em>(optionnel)</em></li>
               </ul>
@@ -551,6 +552,7 @@
                     <th>Produit</th>
                     <th>Catégorie</th>
                     <th>Prix d'achat</th>
+                    <th>Prix de vente</th>
                     <th>Quantité</th>
                     <th>SKU</th>
                     <th></th>
@@ -563,6 +565,7 @@
                       <td><strong>{{ row.nom }}</strong></td>
                       <td><span class="badge bg-light text-primary">{{ row.categorie }}</span></td>
                       <td>{{ row.prix_achat | number:'1.0-0' }} Ar</td>
+                      <td>{{ row.prix_vente | number:'1.0-0' }} Ar</td>
                       <td>
                         <span class="fw-semibold">{{ row.quantite }}</span>
                       </td>
@@ -714,7 +717,7 @@
               }
             </div>
 
-            <!-- Ligne Prix + Quantité -->
+            <!-- Ligne Prix -->
             <div class="modal-row">
               <!-- Prix d'achat (coût) -->
               <div class="modal-field flex-grow-1">
@@ -738,27 +741,49 @@
                 }
               </div>
 
-              <!-- Quantité -->
+              <!-- Prix de vente -->
               <div class="modal-field flex-grow-1">
                 <label class="modal-field-label">
-                  <i antIcon type="container" theme="outline" class="me-1"></i>
-                  Quantité <span class="text-danger">*</span>
+                  <i antIcon type="account-book" theme="outline" class="me-1"></i>
+                  Prix de vente <span class="text-danger">*</span>
                 </label>
-                <div class="prix-input-group" [class.has-error]="manualErrors['quantite']">
+                <div class="prix-input-group" [class.has-error]="manualErrors['prix_vente']">
                   <input 
                     type="number" 
                     class="prix-input"
-                    [(ngModel)]="manualForm.quantite"
-                    placeholder="50"
+                    [(ngModel)]="manualForm.prix_vente"
+                    placeholder="22000"
                     min="0"
-                    step="1"
+                    step="100"
                   >
-                  <span class="prix-input-suffix">unités</span>
+                  <span class="prix-input-suffix">Ar</span>
                 </div>
-                @if (manualErrors['quantite']) {
-                  <div class="field-error"><i antIcon type="close-circle" theme="outline" class="me-1"></i>{{ manualErrors['quantite'] }}</div>
+                @if (manualErrors['prix_vente']) {
+                  <div class="field-error"><i antIcon type="close-circle" theme="outline" class="me-1"></i>{{ manualErrors['prix_vente'] }}</div>
                 }
               </div>
+            </div>
+
+            <!-- Quantité -->
+            <div class="modal-field">
+              <label class="modal-field-label">
+                <i antIcon type="container" theme="outline" class="me-1"></i>
+                Quantité <span class="text-danger">*</span>
+              </label>
+              <div class="prix-input-group" [class.has-error]="manualErrors['quantite']">
+                <input 
+                  type="number" 
+                  class="prix-input"
+                  [(ngModel)]="manualForm.quantite"
+                  placeholder="50"
+                  min="0"
+                  step="1"
+                >
+                <span class="prix-input-suffix">unités</span>
+              </div>
+              @if (manualErrors['quantite']) {
+                <div class="field-error"><i antIcon type="close-circle" theme="outline" class="me-1"></i>{{ manualErrors['quantite'] }}</div>
+              }
             </div>
 
             <!-- Référence SKU (optionnel) -->
@@ -778,7 +803,7 @@
             </div>
 
             <!-- Résumé si données complètes -->
-            @if (manualForm.nom && manualForm.categorie && manualForm.prix_achat && manualForm.quantite) {
+            @if (manualForm.nom && manualForm.categorie && manualForm.prix_achat && manualForm.prix_vente && manualForm.quantite) {
               <div class="modal-summary">
                 <div class="summary-title">📋 Résumé</div>
                 <div class="summary-grid">
@@ -795,12 +820,16 @@
                     <span class="summary-value fw-bold">{{ manualForm.prix_achat | number:'1.0-0' }} Ar</span>
                   </div>
                   <div class="summary-item">
+                    <span class="summary-label">Prix de vente</span>
+                    <span class="summary-value fw-bold">{{ manualForm.prix_vente | number:'1.0-0' }} Ar</span>
+                  </div>
+                  <div class="summary-item">
                     <span class="summary-label">Quantité</span>
                     <span class="summary-value fw-bold">{{ manualForm.quantite }}</span>
                   </div>
                   <div class="summary-item total">
-                    <span class="summary-label">Valeur totale</span>
-                    <span class="summary-value fw-bold text-primary">{{ (manualForm.prix_achat * manualForm.quantite) | number:'1.0-0' }} Ar</span>
+                    <span class="summary-label">Valeur stock (vente)</span>
+                    <span class="summary-value fw-bold text-primary">{{ (manualForm.prix_vente * manualForm.quantite) | number:'1.0-0' }} Ar</span>
                   </div>
                 </div>
               </div>

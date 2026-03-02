@@ -227,9 +227,21 @@ export class BoutiqueDashboardComponent implements OnInit {
     };
 
     // Graphique des catégories (donut)
-    const categoriesData = this.stats?.categories || [];
-    const defaultCategories = categoriesData.length > 0 
-      ? categoriesData 
+    let categoriesData = (this.stats?.categories || [])
+      .filter(c => c?.nom && Number.isFinite(c.count) && c.count > 0);
+
+    // Fallback: reconstruire depuis les boutiques si l'API ne renvoie pas encore les catégories produits
+    if (categoriesData.length === 0 && this.stats?.boutiques?.length) {
+      const byCategorie = new Map<string, number>();
+      this.stats.boutiques.forEach((b) => {
+        const key = (b.categorie_principale || 'Sans catégorie').trim() || 'Sans catégorie';
+        byCategorie.set(key, (byCategorie.get(key) || 0) + 1);
+      });
+      categoriesData = Array.from(byCategorie.entries()).map(([nom, count]) => ({ nom, count }));
+    }
+
+    const defaultCategories = categoriesData.length > 0
+      ? categoriesData
       : [{ nom: 'Aucune catégorie', count: 1 }];
     
     this.categoriesChartOptions = {

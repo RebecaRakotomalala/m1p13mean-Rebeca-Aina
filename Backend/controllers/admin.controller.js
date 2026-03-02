@@ -615,7 +615,8 @@ exports.getBoutiqueStats = async (req, res) => {
       ventesAgg,
       commandesEnAttenteResult,
       ventesParMois,
-      commandesParStatut
+      commandesParStatut,
+      categories
     ] = await Promise.all([
       Produit.countDocuments({ boutique_id: { $in: boutiqueIds }, actif: true }),
       Avis.countDocuments({ boutique_id: { $in: boutiqueIds } }),
@@ -662,6 +663,12 @@ exports.getBoutiqueStats = async (req, res) => {
         { $group: { _id: { commande_id: '$commande_id', statut: '$commande.statut' } } },
         { $group: { _id: '$_id.statut', count: { $sum: 1 } } },
         { $project: { statut: '$_id', count: 1, _id: 0 } }
+      ]),
+      Produit.aggregate([
+        { $match: { boutique_id: { $in: boutiqueIds }, actif: true } },
+        { $group: { _id: '$categorie', count: { $sum: 1 } } },
+        { $project: { _id: 0, nom: { $ifNull: ['$_id', 'Sans catégorie'] }, count: 1 } },
+        { $sort: { count: -1, nom: 1 } }
       ])
     ]);
 
@@ -671,14 +678,14 @@ exports.getBoutiqueStats = async (req, res) => {
 
     res.json({
       success: true,
-      stats: { boutiques, totalProduits, totalVentes, commandesCount, commandesEnAttente, totalAvis, ventesParMois, commandesParStatut }
+      stats: { boutiques, totalProduits, totalVentes, commandesCount, commandesEnAttente, totalAvis, ventesParMois, commandesParStatut, categories }
     });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Erreur recuperation stats boutique', error: error.message });
   }
 };
 
-// Import stock en masse : créer ou mettre à jour des produits (nom, catégorie, coût, quantité)
+// Import stock en masse : créer ou mettre à jour des produits (nom, catégorie, coût, vente, quantité)
 exports.importStock = async (req, res) => {
   try {
     const { data } = req.body;
@@ -699,13 +706,16 @@ exports.importStock = async (req, res) => {
         const nom = (row.nom || '').trim();
         const categorie = (row.categorie || '').trim();
         const prix_achat = parseFloat(row.prix_achat);
+        const hasPrixVente = row.prix_vente !== undefined && row.prix_vente !== null && `${row.prix_vente}`.trim() !== '';
+        const prix_vente = hasPrixVente ? parseFloat(row.prix_vente) : prix_achat;
         const quantite = parseInt(row.quantite, 10);
         const reference_sku = (row.reference_sku || '').trim();
 
         // Validations
         if (!nom) { errors.push(`Ligne ignorée : nom vide`); continue; }
         if (!categorie) { errors.push(`"${nom}" : catégorie vide`); continue; }
-        if (isNaN(prix_achat) || prix_achat < 0) { errors.push(`"${nom}" : prix invalide`); continue; }
+        if (isNaN(prix_achat) || prix_achat < 0) { errors.push(`"${nom}" : prix d'achat invalide`); continue; }
+        if (isNaN(prix_vente) || prix_vente < 0) { errors.push(`"${nom}" : prix de vente invalide`); continue; }
         if (isNaN(quantite) || quantite < 0) { errors.push(`"${nom}" : quantité invalide`); continue; }
 
         // Chercher un produit existant par nom (insensible à la casse) ou reference_sku
@@ -721,6 +731,7 @@ exports.importStock = async (req, res) => {
         if (existingProduit) {
           // Mettre à jour le produit existant
           existingProduit.prix_achat = prix_achat;
+          existingProduit.prix_initial = prix_vente;
           existingProduit.stock_quantite = quantite;
           if (categorie) existingProduit.categorie = categorie;
           if (reference_sku) existingProduit.reference_sku = reference_sku;
@@ -737,7 +748,7 @@ exports.importStock = async (req, res) => {
             nom,
             slug,
             categorie,
-            prix_initial: prix_achat, // prix de vente = prix d'achat par défaut (à modifier ensuite)
+            prix_initial: prix_vente,
             prix_achat,
             stock_quantite: quantite,
             stock_seuil_alerte: 5,

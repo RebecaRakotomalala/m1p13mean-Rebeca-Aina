@@ -376,7 +376,7 @@ export class ApiService {
   }
 
   // === Import stock en masse (produit + categorie + cout + quantite) ===
-  importStockCsv(data: Array<{ nom: string; categorie: string; prix_achat: number; quantite: number; reference_sku?: string }>): Observable<any> {
+  importStockCsv(data: Array<{ nom: string; categorie: string; prix_achat: number; prix_vente: number; quantite: number; reference_sku?: string }>): Observable<any> {
     return this.http.post(`${this.baseUrl}/admin/import-stock`, { data }).pipe(tap(() => this.invalidateAppCache()));
   }
 

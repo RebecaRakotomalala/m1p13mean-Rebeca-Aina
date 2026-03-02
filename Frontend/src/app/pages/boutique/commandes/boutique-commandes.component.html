@@ -144,9 +144,6 @@
                 <div class="produit-list">
                   @for (l of cmd.lignes; track $index) {
                     <div class="d-flex align-items-center gap-1 mb-1">
-                      @if (l.image_produit) {
-                        <img [src]="l.image_produit" class="product-thumb-sm">
-                      }
                       <small>{{ l.nom_produit }} <span class="text-muted">x{{ l.quantite }}</span></small>
                     </div>
                   }
