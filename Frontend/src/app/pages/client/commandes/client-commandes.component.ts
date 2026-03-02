@@ -150,4 +150,12 @@ export class ClientCommandesComponent implements OnInit {
     };
     return labels[statut] || statut || 'N/A';
   }
+
+  trackByCommande(index: number, cmd: any): string {
+    return cmd?._id || cmd?.numero_commande || `${index}`;
+  }
+
+  trackByLigne(index: number, ligne: any): string {
+    return ligne?._id || `${ligne?.produit_id || ligne?.nom_produit || 'ligne'}-${index}`;
+  }
 }

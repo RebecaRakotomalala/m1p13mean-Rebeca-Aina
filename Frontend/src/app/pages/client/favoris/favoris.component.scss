@@ -473,3 +473,20 @@
   .fav-img-wrap { height: 170px; }
 }
 
+/* Performance mode: disable expensive animations/transitions on this page */
+.stat-card,
+.fav-card,
+.fav-img,
+.btn-cart,
+.btn-visit,
+.btn-remove,
+.btn-primary-custom,
+.btn-outline-custom {
+  animation: none !important;
+  transition: none !important;
+}
+
+.boutique-avatar {
+  backdrop-filter: none !important;
+}
+

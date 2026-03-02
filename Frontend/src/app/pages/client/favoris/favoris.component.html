@@ -65,10 +65,9 @@
 <div class="favorites-grid" *ngIf="!loading && favorisFiltres.length > 0">
 
   <!-- Product Favorites -->
-  <div *ngFor="let f of favorisFiltres; let i = index"
+  <div *ngFor="let f of favorisFiltres; trackBy: trackByFavori"
        class="fav-card"
-       [class.removing]="isRemoving(f._id)"
-       [style.animation-delay]="(i * 0.05) + 's'">
+       [class.removing]="isRemoving(f._id)">
 
     <!-- PRODUIT -->
     <ng-container *ngIf="f.type === 'produit' && f.produit_id">

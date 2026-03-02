@@ -557,3 +557,18 @@
   }
 }
 
+/* Performance mode: disable expensive animations/transitions on this page */
+.stat-card,
+.order-card,
+.order-header,
+.order-details,
+.progress-step .step-dot,
+.order-right .expand-icon,
+.filters-bar .search-box,
+.filters-bar .chip,
+.btn-primary-custom,
+.btn-outline-custom {
+  animation: none !important;
+  transition: none !important;
+}
+

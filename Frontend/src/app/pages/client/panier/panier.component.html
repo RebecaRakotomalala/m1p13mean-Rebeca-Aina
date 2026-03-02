@@ -70,10 +70,9 @@
   <div class="cart-layout" *ngIf="panier && panier.items.length > 0">
     <!-- Items List -->
     <div class="cart-items">
-      <div *ngFor="let item of panier.items; let i = index"
+      <div *ngFor="let item of panier.items; trackBy: trackByCartItem"
            class="cart-item"
-           [class.updating]="isUpdating(item._id)"
-           [style.animation-delay]="(i * 0.05) + 's'">
+           [class.updating]="isUpdating(item._id)">
 
         <!-- Product Image -->
         <div class="item-image">

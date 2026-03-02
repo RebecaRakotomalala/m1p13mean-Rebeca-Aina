@@ -104,4 +104,8 @@ export class PanierComponent implements OnInit {
   continueShopping(): void {
     this.router.navigate(['/catalogue']);
   }
+
+  trackByCartItem(index: number, item: any): string {
+    return item?._id || item?.produit?._id || `${index}`;
+  }
 }

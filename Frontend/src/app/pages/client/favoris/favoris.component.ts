@@ -79,4 +79,8 @@ export class FavorisComponent implements OnInit {
   goToCatalogue(): void {
     this.router.navigate(['/catalogue']);
   }
+
+  trackByFavori(index: number, favori: any): string {
+    return favori?._id || `${favori?.type || 'item'}-${favori?.produit_id?._id || favori?.boutique_id?._id || index}`;
+  }
 }
