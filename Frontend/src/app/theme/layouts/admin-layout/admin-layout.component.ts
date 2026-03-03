@@ -33,7 +33,28 @@ export class AdminLayout {
     // Prefetch dashboard stats to reduce perceived wait on first dashboard open.
     if (this.authService.currentUser?.role === 'admin') {
       this.apiService.prefetchAdminDashboard({ period: '30d', groupBy: 'day' });
+      this.apiService.prefetchAdminData();
+      this.authService.prefetchAdminUsers({ page: 1, limit: 20 });
+      this.preloadAdminPages();
     }
+    if (this.authService.currentUser?.role === 'client') {
+      this.apiService.prefetchClientData();
+      this.preloadClientPages();
+    }
+  }
+
+  private preloadAdminPages(): void {
+    import('../../../pages/admin/dashboard/admin-dashboard.component');
+    import('../../../pages/admin/boutiques/admin-boutiques.component');
+    import('../../../pages/admin/evenements/admin-evenements.component');
+    import('../../../pages/admin/users/admin-users.component');
+    import('../../../pages/admin/avis/admin-avis.component');
+  }
+
+  private preloadClientPages(): void {
+    import('../../../pages/client/panier/panier.component');
+    import('../../../pages/client/commandes/client-commandes.component');
+    import('../../../pages/client/favoris/favoris.component');
   }
 
   get navCollapsedMob(): boolean {

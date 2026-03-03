@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
-import { tap } from 'rxjs/operators';
+import { finalize, shareReplay, tap } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
@@ -13,6 +13,7 @@ export class ApiService {
   private boutiqueCacheTtlMs = 45000;
   private boutiqueMemoryCache = new Map<string, { ts: number; data: any }>();
   private boutiqueStoragePrefix = 'boutique_cache::';
+  private pendingGetRequests = new Map<string, Observable<any>>();
 
   constructor(private http: HttpClient) {}
 
@@ -66,11 +67,18 @@ export class ApiService {
     const key = this.buildCacheKey(endpoint, params);
     const cached = this.getCachedValue(key, ttlMs);
     if (cached) return of(cached);
-    return this.http.get(`${this.baseUrl}${endpoint}`, { params }).pipe(
+    const pending = this.pendingGetRequests.get(key);
+    if (pending) return pending;
+
+    const request$ = this.http.get(`${this.baseUrl}${endpoint}`, { params }).pipe(
       tap((res) => {
         if ((res as any)?.success) this.setCachedValue(key, res);
-      })
+      }),
+      finalize(() => this.pendingGetRequests.delete(key)),
+      shareReplay(1)
     );
+    this.pendingGetRequests.set(key, request$);
+    return request$;
   }
 
   invalidateBoutiqueCache(): void {
@@ -226,6 +234,12 @@ export class ApiService {
     return this.cachedGet('/favoris', params);
   }
 
+  prefetchClientData(): void {
+    this.getPanier().subscribe({ error: () => {} });
+    this.getMyCommandes().subscribe({ error: () => {} });
+    this.getMyFavoris().subscribe({ error: () => {} });
+  }
+
   toggleFavori(type: string, produit_id?: string, boutique_id?: string): Observable<any> {
     return this.http.post(`${this.baseUrl}/favoris/toggle`, { type, produit_id, boutique_id }).pipe(tap(() => this.invalidateAppCache()));
   }
@@ -291,6 +305,12 @@ export class ApiService {
         // Silent: prefetch should never block UI
       }
     });
+  }
+
+  prefetchAdminData(): void {
+    this.getBoutiques({ page: 1, limit: 20 }).subscribe({ error: () => {} });
+    this.getEvenements({ page: 1, limit: 12 }).subscribe({ error: () => {} });
+    this.getAdminAvis({ page: 1, limit: 15 }).subscribe({ error: () => {} });
   }
 
   validerBoutique(id: string): Observable<any> {
