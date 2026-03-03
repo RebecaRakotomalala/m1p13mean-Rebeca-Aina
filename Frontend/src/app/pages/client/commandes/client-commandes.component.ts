@@ -1,43 +1,68 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { ApiService } from '../../../services/api.service';
+import { Subject } from 'rxjs';
+import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
 
 @Component({
   selector: 'app-client-commandes',
   imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './client-commandes.component.html',
-  styleUrls: ['./client-commandes.component.scss']
+  styleUrls: ['./client-commandes.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class ClientCommandesComponent implements OnInit {
+export class ClientCommandesComponent implements OnInit, OnDestroy {
   commandes: any[] = [];
+  commandesFiltrees: any[] = [];
   loading = true;
   filtreStatut = '';
   searchTerm = '';
   expandedCmd: string | null = null;
+  readonly stats = { total: 0, enCours: 0, livrees: 0, montantTotal: 0 };
+  private readonly destroy$ = new Subject<void>();
+  private readonly search$ = new Subject<string>();
 
-  constructor(private api: ApiService) {}
+  constructor(
+    private api: ApiService,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit(): void {
+    this.search$
+      .pipe(debounceTime(200), distinctUntilChanged(), takeUntil(this.destroy$))
+      .subscribe((value) => {
+        this.searchTerm = value;
+        this.applyFilters();
+      });
     this.loadCommandes();
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   loadCommandes(): void {
     this.loading = true;
     this.api.getMyCommandes().subscribe({
       next: (res) => {
-        if (res.success) this.commandes = res.commandes;
+        if (res.success) this.commandes = res.commandes || [];
+        this.computeStats();
+        this.applyFilters();
         this.loading = false;
+        this.cdr.markForCheck();
       },
       error: (err) => {
         console.error(err);
         this.loading = false;
+        this.cdr.markForCheck();
       }
     });
   }
 
-  get commandesFiltrees(): any[] {
+  private applyFilters(): void {
     let result = this.commandes;
     if (this.filtreStatut) {
       result = result.filter(c => c.statut === this.filtreStatut);
@@ -49,19 +74,20 @@ export class ClientCommandesComponent implements OnInit {
         c.lignes?.some((l: any) => l.nom_produit?.toLowerCase().includes(s))
       );
     }
-    return result;
+    this.commandesFiltrees = result;
+    this.cdr.markForCheck();
   }
 
-  get stats() {
-    const total = this.commandes.length;
-    const enCours = this.commandes.filter(c => ['en_attente', 'confirmee', 'en_preparation', 'prete'].includes(c.statut)).length;
-    const livrees = this.commandes.filter(c => c.statut === 'livree').length;
-    const montantTotal = this.commandes.reduce((s: number, c: any) => s + (c.montant_total || 0), 0);
-    return { total, enCours, livrees, montantTotal };
+  private computeStats(): void {
+    this.stats.total = this.commandes.length;
+    this.stats.enCours = this.commandes.filter(c => ['en_attente', 'confirmee', 'en_preparation', 'prete'].includes(c.statut)).length;
+    this.stats.livrees = this.commandes.filter(c => c.statut === 'livree').length;
+    this.stats.montantTotal = this.commandes.reduce((s: number, c: any) => s + (c.montant_total || 0), 0);
   }
 
   toggleExpand(id: string): void {
     this.expandedCmd = this.expandedCmd === id ? null : id;
+    this.cdr.markForCheck();
   }
 
   isExpanded(id: string): boolean {
@@ -157,5 +183,20 @@ export class ClientCommandesComponent implements OnInit {
 
   trackByLigne(index: number, ligne: any): string {
     return ligne?._id || `${ligne?.produit_id || ligne?.nom_produit || 'ligne'}-${index}`;
+  }
+
+  onSearchChange(value: string): void {
+    this.search$.next(value || '');
+  }
+
+  setStatutFilter(value: string): void {
+    this.filtreStatut = value;
+    this.applyFilters();
+  }
+
+  resetFilters(): void {
+    this.filtreStatut = '';
+    this.searchTerm = '';
+    this.applyFilters();
   }
 }

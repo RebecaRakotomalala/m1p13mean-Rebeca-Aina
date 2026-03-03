@@ -64,10 +64,11 @@ const routes: Routes = [
         path: 'boutiques',
         loadComponent: () => import('./pages/admin/boutiques/admin-boutiques.component').then(c => c.AdminBoutiquesComponent)
       },
-      {
-        path: 'commandes',
-        loadComponent: () => import('./pages/admin/commandes/admin-commandes.component').then(c => c.AdminCommandesComponent)
-      },
+      // Fonctionnalite Commandes admin desactivee temporairement dans l'interface.
+      // {
+      //   path: 'commandes',
+      //   loadComponent: () => import('./pages/admin/commandes/admin-commandes.component').then(c => c.AdminCommandesComponent)
+      // },
       {
         path: 'evenements',
         loadComponent: () => import('./pages/admin/evenements/admin-evenements.component').then(c => c.AdminEvenementsComponent)

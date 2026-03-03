@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
@@ -8,15 +8,18 @@ import { ApiService } from '../../../services/api.service';
   selector: 'app-favoris',
   imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './favoris.component.html',
-  styleUrls: ['./favoris.component.scss']
+  styleUrls: ['./favoris.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class FavorisComponent implements OnInit {
   favoris: any[] = [];
+  favorisFiltres: any[] = [];
   loading = true;
   filterType = '';
   removingIds: Set<string> = new Set();
+  readonly stats = { total: 0, produits: 0, boutiques: 0 };
 
-  constructor(private api: ApiService, private router: Router) {}
+  constructor(private api: ApiService, private router: Router, private cdr: ChangeDetectorRef) {}
 
   ngOnInit(): void { this.loadFavoris(); }
 
@@ -24,26 +27,29 @@ export class FavorisComponent implements OnInit {
     this.loading = true;
     this.api.getMyFavoris().subscribe({
       next: (res) => {
-        if (res.success) this.favoris = res.favoris;
+        if (res.success) this.favoris = res.favoris || [];
+        this.computeStats();
+        this.applyFilter();
         this.loading = false;
+        this.cdr.markForCheck();
       },
       error: (err) => {
         console.error(err);
         this.loading = false;
+        this.cdr.markForCheck();
       }
     });
   }
 
-  get favorisFiltres(): any[] {
-    if (!this.filterType) return this.favoris;
-    return this.favoris.filter(f => f.type === this.filterType);
+  private applyFilter(): void {
+    this.favorisFiltres = this.filterType ? this.favoris.filter(f => f.type === this.filterType) : this.favoris;
+    this.cdr.markForCheck();
   }
 
-  get stats() {
-    const total = this.favoris.length;
-    const produits = this.favoris.filter(f => f.type === 'produit').length;
-    const boutiques = this.favoris.filter(f => f.type === 'boutique').length;
-    return { total, produits, boutiques };
+  private computeStats(): void {
+    this.stats.total = this.favoris.length;
+    this.stats.produits = this.favoris.filter(f => f.type === 'produit').length;
+    this.stats.boutiques = this.favoris.filter(f => f.type === 'boutique').length;
   }
 
   removeFavori(f: any): void {
@@ -53,9 +59,13 @@ export class FavorisComponent implements OnInit {
       next: () => {
         this.removingIds.delete(id);
         this.favoris = this.favoris.filter(fav => fav._id !== id);
+        this.computeStats();
+        this.applyFilter();
+        this.cdr.markForCheck();
       },
       error: () => {
         this.removingIds.delete(id);
+        this.cdr.markForCheck();
       }
     });
   }
@@ -82,5 +92,10 @@ export class FavorisComponent implements OnInit {
 
   trackByFavori(index: number, favori: any): string {
     return favori?._id || `${favori?.type || 'item'}-${favori?.produit_id?._id || favori?.boutique_id?._id || index}`;
+  }
+
+  setFilterType(type: string): void {
+    this.filterType = type;
+    this.applyFilter();
   }
 }

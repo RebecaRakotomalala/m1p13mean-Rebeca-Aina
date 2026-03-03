@@ -44,14 +44,15 @@ export const AdminNavigationItems: NavigationItem[] = [
         url: '/admin/boutiques',
         icon: 'shop'
       },
-      {
-        id: 'admin-commandes',
-        title: 'Commandes',
-        type: 'item',
-        classes: 'nav-item',
-        url: '/admin/commandes',
-        icon: 'shopping-cart'
-      },
+      // Fonctionnalite Commandes admin masquee temporairement dans l'interface.
+      // {
+      //   id: 'admin-commandes',
+      //   title: 'Commandes',
+      //   type: 'item',
+      //   classes: 'nav-item',
+      //   url: '/admin/commandes',
+      //   icon: 'shopping-cart'
+      // },
       {
         id: 'admin-evenements',
         title: 'Evenements',

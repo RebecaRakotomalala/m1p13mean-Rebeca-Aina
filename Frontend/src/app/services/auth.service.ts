@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable, tap } from 'rxjs';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { BehaviorSubject, Observable, of, tap } from 'rxjs';
+import { finalize, shareReplay } from 'rxjs/operators';
 import { Router } from '@angular/router';
 import { environment } from '../../environments/environment';
 
@@ -26,6 +27,10 @@ export class AuthService {
   private apiUrl = `${environment.apiUrl}/auth`;
   private currentUserSubject = new BehaviorSubject<User | null>(null);
   public currentUser$ = this.currentUserSubject.asObservable();
+  private usersCacheTtlMs = 45000;
+  private usersMemoryCache = new Map<string, { ts: number; data: any }>();
+  private usersStoragePrefix = 'auth_users_cache::';
+  private pendingUsersRequests = new Map<string, Observable<any>>();
 
   constructor(private http: HttpClient, private router: Router) {
     const stored = localStorage.getItem('user');
@@ -90,11 +95,88 @@ export class AuthService {
   }
 
   // Admin functions
+  private normalizeParams(params?: any): any {
+    if (!params) return {};
+    if (params instanceof HttpParams) {
+      const out: any = {};
+      for (const key of params.keys()) out[key] = params.getAll(key);
+      return out;
+    }
+    return params;
+  }
+
+  private usersCacheKey(params?: any): string {
+    const normalized = this.normalizeParams(params);
+    const sorted = Object.keys(normalized || {})
+      .sort()
+      .reduce((acc: any, key: string) => {
+        acc[key] = normalized[key];
+        return acc;
+      }, {});
+    return JSON.stringify(sorted);
+  }
+
+  private getCachedUsers(key: string): any | null {
+    const now = Date.now();
+    const memory = this.usersMemoryCache.get(key);
+    if (memory && now - memory.ts < this.usersCacheTtlMs) return memory.data;
+
+    const raw = sessionStorage.getItem(this.usersStoragePrefix + key);
+    if (!raw) return null;
+    try {
+      const parsed = JSON.parse(raw);
+      if (parsed?.ts && parsed?.data && now - parsed.ts < this.usersCacheTtlMs) {
+        this.usersMemoryCache.set(key, { ts: parsed.ts, data: parsed.data });
+        return parsed.data;
+      }
+    } catch {
+      return null;
+    }
+    return null;
+  }
+
+  private setCachedUsers(key: string, data: any): void {
+    const payload = { ts: Date.now(), data };
+    this.usersMemoryCache.set(key, payload);
+    sessionStorage.setItem(this.usersStoragePrefix + key, JSON.stringify(payload));
+  }
+
+  private clearUsersCache(): void {
+    this.usersMemoryCache.clear();
+    const keysToDelete: string[] = [];
+    for (let i = 0; i < sessionStorage.length; i++) {
+      const key = sessionStorage.key(i);
+      if (key && key.startsWith(this.usersStoragePrefix)) keysToDelete.push(key);
+    }
+    keysToDelete.forEach((k) => sessionStorage.removeItem(k));
+  }
+
   getAllUsers(params?: any): Observable<any> {
-    return this.http.get(`${this.apiUrl}/users`, { params });
+    const key = this.usersCacheKey(params);
+    const cached = this.getCachedUsers(key);
+    if (cached) return of(cached);
+
+    const pending = this.pendingUsersRequests.get(key);
+    if (pending) return pending;
+
+    const request$ = this.http.get(`${this.apiUrl}/users`, { params }).pipe(
+      tap((res) => {
+        if ((res as any)?.success) this.setCachedUsers(key, res);
+      }),
+      finalize(() => this.pendingUsersRequests.delete(key)),
+      shareReplay(1)
+    );
+    this.pendingUsersRequests.set(key, request$);
+    return request$;
   }
 
   toggleUserStatus(userId: string, raison?: string): Observable<any> {
-    return this.http.put(`${this.apiUrl}/users/${userId}/toggle-status`, { raison });
+    return this.http.put(`${this.apiUrl}/users/${userId}/toggle-status`, { raison }).pipe(
+      tap(() => this.clearUsersCache())
+    );
+  }
+
+  prefetchAdminUsers(params?: any): void {
+    this.getAllUsers(params).subscribe({ error: () => {} });
   }
 }
